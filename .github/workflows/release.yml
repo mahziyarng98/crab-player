@@ -125,9 +125,11 @@ jobs:
           sudo timeout 180 apt-get update -qq \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
             -o Acquire::https::Timeout=20
+          # flatpak-builder strips every built module with eu-strip, which
+          # Ubuntu does not install with it (elfutils provides it).
           sudo timeout 300 apt-get install -y -qq --no-install-recommends \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
-            flatpak flatpak-builder
+            flatpak flatpak-builder elfutils
           # bubblewrap needs unprivileged user namespaces, which Ubuntu
           # 24.04 restricts through AppArmor.
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
