@@ -135,7 +135,7 @@ pub fn show(ui: &mut egui::Ui, logo: &mut Logo, input: &CaptionInput<'_>) -> Cap
             ui,
             next(BUTTON.x),
             Icon::Restore,
-            "Leave full screen (Esc)",
+            "Leave full screen (Esc, F or middle click)",
             ButtonState::Normal,
         ) {
             output.command = Some(Command::Fullscreen);

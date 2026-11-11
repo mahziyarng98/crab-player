@@ -167,7 +167,7 @@ cannot decode is decoded in software automatically.
 | `[` / `]` | Speed down / up |
 | `Backspace` | Reset speed |
 | `PgUp` / `PgDn` | Previous / next item |
-| `F`, `Enter` | Toggle full screen |
+| `F`, `Enter`, middle click | Toggle full screen (double click on the video too) |
 | `Esc` | Leave full screen |
 | `F9` | Toggle playlist |
 | `A` / `J` | Next audio / subtitle track |

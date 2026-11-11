@@ -454,11 +454,52 @@ impl PlayerApp {
         let timeout = Duration::from_millis(self.config.ui.autohide_ms);
         let idle = self.last_activity.elapsed();
 
-        self.ui.controls_visible = !(may_hide && idle >= timeout);
+        let visible = !(may_hide && idle >= timeout);
+        if visible != self.ui.controls_visible {
+            tracing::debug!(visible, "full-screen chrome visibility changed");
+        }
+        self.ui.controls_visible = visible;
         if may_hide && idle < timeout {
             // Wake up exactly when the chrome is due to disappear; video
             // frames are not guaranteed to arrive at that moment.
             ctx.request_repaint_after(timeout - idle);
+        }
+    }
+
+    /// The wheel button toggles full screen, through the same command as F,
+    /// Enter and a double click. Runs before anything is drawn, so menus,
+    /// focus and drags are as they were when the button was clicked.
+    fn handle_middle_click(&mut self, ctx: &egui::Context) {
+        let (clicked, pos, other_button_down) = ctx.input(|i| {
+            (
+                i.pointer.button_clicked(egui::PointerButton::Middle),
+                i.pointer.interact_pos(),
+                i.pointer.primary_down() || i.pointer.secondary_down(),
+            )
+        });
+        if !clicked {
+            return;
+        }
+        let click = command::MiddleClick {
+            clicked,
+            // Panels, the video and the full-screen chrome all live on the
+            // background layer; dialogs, menus and tooltips float above it.
+            over_main_surface: pos
+                .and_then(|pos| ctx.layer_id_at(pos))
+                .is_none_or(|layer| layer.order == egui::Order::Background),
+            popup_open: egui::Popup::is_any_open(ctx),
+            editing_text: ctx.egui_wants_keyboard_input()
+                || self.ui.show_goto
+                || self.ui.show_open_url,
+            // A held left or right button means a drag (seek bar, volume
+            // slider, panel edge, window move) is under way, even before
+            // egui has decided it is one.
+            dragging: ctx.dragged_id().is_some() || other_button_down,
+        };
+        if command::middle_click_toggles_fullscreen(click) {
+            self.run(Command::Fullscreen, ctx);
+        } else {
+            tracing::debug!(?click, "middle click ignored");
         }
     }
 
@@ -589,6 +630,7 @@ impl PlayerApp {
             Command::SpeedReset => self.set_speed(1.0),
             Command::Fullscreen => {
                 self.ui.fullscreen = !self.ui.fullscreen;
+                tracing::debug!(fullscreen = self.ui.fullscreen, "fullscreen toggled");
                 self.last_activity = Instant::now();
                 self.ui.controls_visible = true;
                 ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(self.ui.fullscreen));
@@ -1752,6 +1794,7 @@ impl eframe::App for PlayerApp {
 
         self.tick(&ctx);
         self.update_activity(&ctx);
+        self.handle_middle_click(&ctx);
         self.handle_keys(&ctx);
         self.handle_dropped_files(&ctx);
 

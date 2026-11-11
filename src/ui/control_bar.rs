@@ -247,9 +247,9 @@ pub fn show(ui: &mut egui::Ui, input: &ControlBarInput<'_>) -> ControlBarOutput 
         rect
     };
     let (icon, tooltip) = if input.fullscreen {
-        (Icon::Restore, "Leave full screen (F)")
+        (Icon::Restore, "Leave full screen (F, Esc or middle click)")
     } else {
-        (Icon::Fullscreen, "Full screen (F)")
+        (Icon::Fullscreen, "Full screen (F or middle click)")
     };
     if icons::button_at(ui, take(BUTTON.x, GAP), icon, tooltip, ButtonState::Normal) {
         press(Command::Fullscreen);

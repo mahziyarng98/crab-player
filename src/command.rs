@@ -172,6 +172,39 @@ pub enum Command {
     About,
 }
 
+/// What one frame knows about a middle-button (wheel) click; see
+/// [`middle_click_toggles_fullscreen`].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct MiddleClick {
+    /// The middle button was clicked (pressed and released without moving
+    /// far) this frame.
+    pub clicked: bool,
+    /// The pointer is over the window's own surface (video, caption strip,
+    /// bars, playlist, empty areas), not over a dialog, menu or tooltip.
+    pub over_main_surface: bool,
+    /// A menu, context menu or other popup is open.
+    pub popup_open: bool,
+    /// A text field has keyboard focus, or a dialog made for typing
+    /// (Go To, Open URL) is open.
+    pub editing_text: bool,
+    /// A widget is being dragged: the seek bar, the volume slider, a panel
+    /// edge.
+    pub dragging: bool,
+}
+
+/// Whether a middle click should toggle full screen ([`Command::Fullscreen`]).
+///
+/// The wheel button toggles anywhere on the player itself, but never while
+/// the user is busy with something else: a menu (the click closes it), a
+/// dialog, a text field or a drag in progress.
+pub fn middle_click_toggles_fullscreen(click: MiddleClick) -> bool {
+    click.clicked
+        && click.over_main_surface
+        && !click.popup_open
+        && !click.editing_text
+        && !click.dragging
+}
+
 /// Default key map for Phase 1.
 ///
 /// These bindings follow common desktop-player conventions and are stored
@@ -263,7 +296,7 @@ pub fn label(command: Command) -> &'static str {
         Command::SpeedUp => "]",
         Command::SpeedDown => "[",
         Command::SpeedReset => "Backspace",
-        Command::Fullscreen => "F",
+        Command::Fullscreen => "F / Middle click",
         Command::GoTo => "Ctrl+G",
         Command::ToggleMenuBar => "Ctrl+M",
         Command::ToggleSeekBar => "Ctrl+1",
@@ -320,6 +353,63 @@ pub fn label(command: Command) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A middle click on the video with nothing else going on.
+    fn plain_middle_click() -> MiddleClick {
+        MiddleClick {
+            clicked: true,
+            over_main_surface: true,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn middle_click_on_the_player_toggles_fullscreen() {
+        assert!(middle_click_toggles_fullscreen(plain_middle_click()));
+    }
+
+    #[test]
+    fn no_middle_click_no_toggle() {
+        assert!(!middle_click_toggles_fullscreen(MiddleClick {
+            clicked: false,
+            ..plain_middle_click()
+        }));
+        assert!(!middle_click_toggles_fullscreen(MiddleClick::default()));
+    }
+
+    #[test]
+    fn middle_click_is_ignored_while_busy_elsewhere() {
+        let blocked = [
+            MiddleClick {
+                over_main_surface: false,
+                ..plain_middle_click()
+            },
+            MiddleClick {
+                popup_open: true,
+                ..plain_middle_click()
+            },
+            MiddleClick {
+                editing_text: true,
+                ..plain_middle_click()
+            },
+            MiddleClick {
+                dragging: true,
+                ..plain_middle_click()
+            },
+        ];
+        for click in blocked {
+            assert!(!middle_click_toggles_fullscreen(click), "{click:?}");
+        }
+    }
+
+    #[test]
+    fn fullscreen_label_names_every_way_in() {
+        let label = label(Command::Fullscreen);
+        assert!(
+            label.contains('F') && label.contains("Middle click"),
+            "{label}"
+        );
+    }
 
     #[test]
     fn command_modifiers_beat_plain_keys() {
