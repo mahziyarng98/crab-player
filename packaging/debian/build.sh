@@ -77,7 +77,14 @@ tar -C "$src" --exclude=./target --exclude=./dist --exclude=./.git -cf - . | tar
 cp -r "$build/packaging/debian" "$build/debian"
 cd "$build"
 dpkg-buildpackage -b -us -uc
-deb="$(ls ../crab-player_*.deb | grep -v dbgsym | head -1)"
+deb=""
+for candidate in ../crab-player_*.deb; do
+    [ -f "$candidate" ] || continue
+    case "$candidate" in *dbgsym*) continue ;; esac
+    deb="$candidate"
+    break
+done
+[ -n "$deb" ] || { echo "dpkg-buildpackage produced no .deb" >&2; exit 1; }
 cp "$deb" "$dist/"
 out="$dist/$(basename "$deb")"
 (cd "$dist" && sha256sum "$(basename "$out")" >"$(basename "$out").sha256")

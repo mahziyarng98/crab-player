@@ -103,7 +103,5 @@ jobs:
           desktop-file-validate packaging/io.github.mahziyarng98.CrabPlayer.desktop
           appstreamcli validate --no-net packaging/io.github.mahziyarng98.CrabPlayer.metainfo.xml
       - name: Shell scripts
-        # Informational until the scripts have had a clean shellcheck run.
-        continue-on-error: true
         run: |
           shellcheck -S warning scripts/*.sh packaging/*.sh packaging/*/build.sh packaging/arch/build-local.sh
