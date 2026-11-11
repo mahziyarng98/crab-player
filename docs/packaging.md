@@ -163,6 +163,26 @@ for the current user.
 - For Flathub the `dir` source of the crab-player module becomes a `git`
   source pinned to the release tag.
 
+#### Submitting to Flathub (not done yet)
+
+1. Fork `flathub/flathub` and branch off `new-pr`.
+2. Copy `packaging/flatpak/io.github.mahziyarng98.CrabPlayer.yml` and
+   `cargo-sources.json` into
+   `io.github.mahziyarng98.CrabPlayer/`, and replace the crab-player
+   module's `dir` source with a `git` source at the `v0.1.0` tag:
+   `url: https://github.com/mahziyarng98/crab-player.git`, `tag: v0.1.0`,
+   `commit: <the tagged commit>`.
+3. Regenerate `cargo-sources.json` from that tag's `Cargo.lock` with
+   `packaging/flatpak/cargo-sources.py`, and build the bundle locally with
+   `flatpak-builder --repo=repo --force-clean build-dir <manifest>` to
+   confirm it still starts and plays.
+4. Open the pull request; the reviewers check the licence, the AppStream
+   metadata (`appstreamcli validate` passes) and that no network access is
+   requested beyond the `finish-args` in the manifest. Flathub's CI then
+   builds it and publishes after the merge.
+5. Later versions are a pull request in that repository that bumps the tag
+   and `cargo-sources.json`; nothing is published from this repository.
+
 ### Generic tarball and install script
 
 `packaging/tarball.sh` (called by the AppImage build) →
@@ -190,7 +210,24 @@ Arch package (`archlinux:base-devel`) and the Flatpak bundle (best effort:
 it does not block the release). The last job writes `SHA256SUMS` and
 creates the GitHub release with `gh release create`, using only the
 built-in `GITHUB_TOKEN` with `contents: write` for that job; every other
-job has `contents: read`. Actions are pinned to commit SHAs.
+job has `contents: read`. Actions are pinned to commit SHAs. The release
+body comes from `docs/release-notes/<tag>.md` when that file exists.
+
+A manual run (`workflow_dispatch`) builds the same packages as artifacts
+and publishes nothing, so a release can be rehearsed without tagging:
+
+```sh
+gh workflow run release.yml --ref main
+```
+
+The AppImage build pins appimagetool 1.9.1 and the type2 runtime 20251108
+to their release URLs and verifies both SHA-256 checksums before use.
+
+On GitHub-hosted runners, `azure.archive.ubuntu.com` and
+`archive.ubuntu.com` do not resolve, so the jobs install packages through
+`.github/actions/apt-install`, which tries several Ubuntu mirrors with
+bounded timeouts (and the `ubuntu:22.04` container job repoints its
+`sources.list` the same way).
 
 `.github/workflows/ci.yml` runs on every push and pull request: rustfmt,
 clippy (`-D warnings`) and tests with and without the `mpv` feature, the
@@ -223,10 +260,6 @@ when the first video frame is drawn (software OpenGL, llvmpipe).
 
 Not tested here:
 
-- The GitHub workflows have not run (there is no GitHub repository yet).
-  They were checked by parsing the YAML and their structure; `actionlint`
-  and `shellcheck` were not available locally, so the shellcheck step is
-  informational for now.
 - A real system-wide install (`sudo`), installing the Arch package with
   pacman, the AUR, Flathub, aarch64 builds, NVIDIA hardware decoding, and
   RHEL-compatible distributions.

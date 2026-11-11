@@ -3,6 +3,12 @@
   Crab Player
 </h1>
 
+<p align="center">
+  <a href="https://github.com/mahziyarng98/crab-player/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/mahziyarng98/crab-player/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/mahziyarng98/crab-player/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mahziyarng98/crab-player"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
+
 A fast, native media player for Linux with a classic desktop-player layout:
 a slim caption strip with the logo and menu, the video, a full-width seek
 bar over a centred transport bar, and a docked playlist. Written in Rust, with
@@ -73,22 +79,27 @@ and GIF capture, DVD/BD navigation, a shortcut editor.
 | You want nothing installed system-wide | the AppImage | one file, runs from anywhere |
 | A distribution with its own libmpv but no package above | the tarball + `install.sh` | prebuilt binary, uses the system libmpv |
 
-Release files appear on the
-[releases page](https://github.com/mahziyarng98/crab-player/releases) once a
-version is tagged. Every package can also be built from this checkout; see
+Release files are attached to the [v0.1.0
+release](https://github.com/mahziyarng98/crab-player/releases/tag/v0.1.0)
+with `SHA256SUMS`; the commands below download from there. Every package can
+also be built from this checkout; see
 [`docs/packaging.md`](docs/packaging.md) for how each one is made and what
 was tested.
 
 ### Arch Linux
 
 ```sh
-packaging/arch/build-local.sh              # builds target/arch/crab-player-<version>-1-x86_64.pkg.tar.zst
-sudo pacman -U target/arch/crab-player-*-x86_64.pkg.tar.zst
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player-0.1.0-1-x86_64.pkg.tar.zst
+sudo pacman -U crab-player-0.1.0-1-x86_64.pkg.tar.zst
 ```
+
+Or build it from this checkout: `packaging/arch/build-local.sh` writes
+`target/arch/crab-player-<version>-1-x86_64.pkg.tar.zst`.
 
 ### Debian and Ubuntu
 
 ```sh
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player_0.1.0-1_amd64.deb
 sudo apt install ./crab-player_0.1.0-1_amd64.deb
 sudo apt install libavcodec-extra          # optional: the codecs Debian ships separately
 ```
@@ -99,6 +110,7 @@ Needs `libmpv2` (Debian 12+, Ubuntu 23.04+). Ubuntu 22.04 only has
 ### Fedora and openSUSE
 
 ```sh
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player-0.1.0-1.fc45.x86_64.rpm
 sudo dnf install ./crab-player-0.1.0-1.fc45.x86_64.rpm          # Fedora
 sudo zypper install ./crab-player-0.1.0-1.fc45.x86_64.rpm       # openSUSE Tumbleweed
 ```
@@ -112,6 +124,7 @@ repository does the same.
 ### Flatpak
 
 ```sh
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/Crab_Player-0.1.0-x86_64.flatpak
 flatpak install --user ./Crab_Player-0.1.0-x86_64.flatpak
 flatpak run io.github.mahziyarng98.CrabPlayer
 ```
@@ -122,6 +135,7 @@ extension the patented codecs; both are installed from Flathub.
 ### AppImage
 
 ```sh
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/Crab_Player-0.1.0-x86_64.AppImage
 chmod +x Crab_Player-0.1.0-x86_64.AppImage
 ./Crab_Player-0.1.0-x86_64.AppImage movie.mkv
 ```
@@ -132,6 +146,7 @@ mpv installed. Graphics and VA-API drivers are the system's own.
 ### Tarball, or from this checkout
 
 ```sh
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player-0.1.0-linux-x86_64.tar.gz
 tar xf crab-player-0.1.0-linux-x86_64.tar.gz && cd crab-player-0.1.0-linux-x86_64
 scripts/install.sh                         # for your user, into ~/.local (no root)
 sudo scripts/install.sh --prefix /usr/local  # or system-wide
@@ -310,9 +325,9 @@ method are in [`docs/performance.md`](docs/performance.md).
 - Track selection, delays and picture settings are not remembered per file.
 - No subtitle styling options, equalizer, shaders or thumbnail capture yet.
 - Packages were built and install-tested in containers and on one Arch
-  machine; see [`docs/packaging.md`](docs/packaging.md) for exactly what was
-  tested where. Nothing has been published yet (no release, AUR or Flathub
-  entry).
+  machine; the release packages are built by the release workflow. See
+  [`docs/packaging.md`](docs/packaging.md) for exactly what was tested
+  where. 0.1.0 is on GitHub; there is no AUR or Flathub entry yet.
 - In the Flatpak the clipboard is unavailable (the sandbox does not expose
   Wayland's data-control protocol), so "Copy location" does nothing there.
 - On a system without fontconfig or without any installed fonts, the
