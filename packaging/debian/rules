@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+# Build with cargo directly; dh-cargo is not required, which keeps the
+# dependency set small on stable releases.
+#
+# UNTESTED: this packaging has not been built on a Debian system yet.
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	# Nothing to configure.
+
+override_dh_auto_build:
+	cargo build --release --locked
+
+override_dh_auto_test:
+	# The UI has no headless test harness yet; unit tests only.
+	cargo test --release --locked --no-default-features
+
+override_dh_auto_install:
+	install -Dm755 target/release/crab-player \
+		debian/crab-player/usr/bin/crab-player
+	install -Dm644 packaging/crab-player.desktop \
+		debian/crab-player/usr/share/applications/crab-player.desktop
+	for size in 16 24 32 48 64 128 256 512; do \
+		install -Dm644 assets/icons/hicolor/$${size}x$${size}/apps/crab-player.png \
+			debian/crab-player/usr/share/icons/hicolor/$${size}x$${size}/apps/crab-player.png; \
+	done
+	install -Dm644 README.md \
+		debian/crab-player/usr/share/doc/crab-player/README.md
+
+override_dh_auto_clean:
+	cargo clean || true

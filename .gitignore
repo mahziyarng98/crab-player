@@ -1,0 +1,28 @@
+/target
+**/*.rs.bk
+.DS_Store
+
+# Local tooling and editor state
+/.claude/
+.vscode/
+.idea/
+
+# Local test output
+*.log
+/docs/screenshots/tmp/
+
+# Packaging build products
+*.pkg.tar.*
+packaging/flatpak/build-dir
+packaging/flatpak/.flatpak-builder
+packaging/flatpak/cargo-sources.json
+/debian/
+
+# Third-party binaries and loose images must never be committed.
+# The logo lives under assets/ only.
+*.exe
+*.dll
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp

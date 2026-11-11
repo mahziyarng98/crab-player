@@ -1,0 +1,82 @@
+[package]
+name = "crab-player"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+description = "Crab Player: a fast, native media player for Linux built on egui and libmpv"
+license = "MIT"
+repository = "https://github.com/your-org/crab-player"
+keywords = ["video", "player", "mpv", "egui", "linux"]
+categories = ["multimedia::video", "gui"]
+readme = "README.md"
+# Only what a build needs. Loose files in the project root are never packaged.
+include = ["/src", "/assets", "/packaging", "/docs", "/scripts", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE"]
+
+[[bin]]
+name = "crab-player"
+path = "src/main.rs"
+
+[features]
+default = ["mpv"]
+# Real playback engine (libmpv). Disable with --no-default-features for a
+# UI-only development build that does not need libmpv installed.
+mpv = ["dep:libmpv2"]
+
+[dependencies]
+# --- UI ---------------------------------------------------------------
+# glow (OpenGL) is required so libmpv's render API can draw into an
+# offscreen FBO that egui displays as a texture on both X11 and Wayland.
+eframe = { version = "0.37", default-features = false, features = [
+    "glow",
+    "wayland",
+    "x11",
+    "default_fonts",
+    "system_fonts",
+    "persistence",
+    "links",
+] }
+egui = "0.37"
+# The clipboard, without eframe's `clipboard` feature. That feature adds
+# smithay-clipboard, which creates a `wl_data_device` of its own; Hyprland
+# then sends drag-and-drop events to that device only and file drops never
+# reach `wayland_dnd`. arboard uses the data-control protocol instead (and
+# X11 selections under Xwayland), which does not interfere.
+egui-winit = { version = "0.37", default-features = false, features = ["arboard", "bytemuck"] }
+
+# Only to decode and downscale the embedded logo; eframe depends on it
+# already (same features), so this adds no code.
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+# --- Playback ---------------------------------------------------------
+libmpv2 = { version = "7.0.1", optional = true }
+
+# --- App plumbing -----------------------------------------------------
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+toml = "1"
+directories = "6"
+clap = { version = "4", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# --- Desktop integration ---------------------------------------------
+rfd = { version = "0.18", default-features = false, features = ["xdg-portal"] }
+# Drives the dialog futures on their own thread; rfd depends on it already.
+pollster = "1"
+# File drops on native Wayland, which winit does not deliver. Both crates
+# are part of winit's dependency tree already; `client_system` is what lets
+# us attach to the display connection the window uses.
+wayland-client = "0.31"
+wayland-backend = { version = "0.3", features = ["client_system"] }
+# Only to read the native display handle eframe exposes; winit already
+# depends on it, so this adds no code.
+raw-window-handle = "0.6"
+walkdir = "2"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

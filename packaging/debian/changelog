@@ -1,0 +1,5 @@
+crab-player (0.1.0-1) unstable; urgency=low
+
+  * Initial Phase 1 package: UI shell, playlist, libmpv playback.
+
+ -- Crab Player authors <maintainers@example.invalid>  Tue, 10 Nov 2026 12:00:00 +0000

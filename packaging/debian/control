@@ -1,0 +1,28 @@
+Source: crab-player
+Section: video
+Priority: optional
+Maintainer: Crab Player authors <maintainers@example.invalid>
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc,
+ pkg-config,
+ libmpv-dev,
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/your-org/crab-player
+
+Package: crab-player
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmpv2, ffmpeg
+Recommends: xdg-desktop-portal, xdg-desktop-portal-gtk, libavcodec-extra
+Suggests: mesa-va-drivers, intel-media-va-driver, va-driver-all
+Description: fast native media player
+ A light media player with a classic desktop layout: caption strip, video
+ canvas, transport bar and docked playlist.
+ .
+ Playback is provided by libmpv, which brings VA-API/NVDEC hardware
+ decoding, subtitle rendering and network stream support. Every format the
+ installed FFmpeg can decode is supported; libavcodec-extra adds the
+ encoders/decoders Debian ships separately. The interface is
+ built with egui and runs natively on Wayland and X11.
