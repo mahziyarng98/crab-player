@@ -1,22 +1,50 @@
 Source: crab-player
 Section: video
 Priority: optional
-Maintainer: Crab Player authors <maintainers@example.invalid>
+Maintainer: Mahziyar <289230375+mahziyarng98@users.noreply.github.com>
+# Rust 1.95 or newer is required, newer than Debian 12/13 and Ubuntu 24.04
+# ship, so cargo comes from rustup and is not listed here; see
+# docs/packaging.md. libmpv-dev provides the libmpv.so the linker resolves.
 Build-Depends:
  debhelper-compat (= 13),
- cargo,
- rustc,
  pkg-config,
- libmpv-dev,
+ libmpv-dev (>= 0.35),
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Homepage: https://github.com/mahziyarng98/crab-player
+Vcs-Browser: https://github.com/mahziyarng98/crab-player
+Vcs-Git: https://github.com/mahziyarng98/crab-player.git
 
 Package: crab-player
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmpv2, ffmpeg
-Recommends: xdg-desktop-portal, xdg-desktop-portal-gtk, libavcodec-extra
-Suggests: mesa-va-drivers, intel-media-va-driver, va-driver-all
+# libmpv and the windowing/GL libraries are opened at runtime (dlopen), so
+# dh_shlibdeps cannot see them; they are listed by hand. libmpv2 is the
+# client API 2 library (mpv 0.35+): Debian 12+, Ubuntu 23.04+. Ubuntu 22.04
+# only has libmpv1 (API 1) and should use the AppImage or the Flatpak.
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ libmpv2 (>= 0.35),
+ libegl1,
+ libgl1,
+ libwayland-client0,
+ libwayland-cursor0,
+ libwayland-egl1,
+ libxkbcommon0,
+ libx11-6,
+ libxcursor1,
+ libxi6,
+ libxrandr2,
+ libxkbcommon-x11-0,
+ hicolor-icon-theme,
+Recommends:
+ libavcodec-extra,
+ xdg-desktop-portal,
+ xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
+ mesa-va-drivers | intel-media-va-driver | va-driver,
+Suggests:
+ va-driver-all,
+ intel-media-va-driver-non-free,
 Description: fast native media player
  A light media player with a classic desktop layout: caption strip, video
  canvas, transport bar and docked playlist.
@@ -24,5 +52,5 @@ Description: fast native media player
  Playback is provided by libmpv, which brings VA-API/NVDEC hardware
  decoding, subtitle rendering and network stream support. Every format the
  installed FFmpeg can decode is supported; libavcodec-extra adds the
- encoders/decoders Debian ships separately. The interface is
- built with egui and runs natively on Wayland and X11.
+ codecs Debian ships separately. The interface is built with egui and runs
+ natively on Wayland and X11.

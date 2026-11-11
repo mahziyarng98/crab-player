@@ -1,19 +1,19 @@
-# Flatpak manifest — skeleton. UNTESTED: it has never been built.
+# Flatpak manifest for Crab Player.
 #
-# Before building:
-#   1. Replace the git URL below with the real repository and pin the commit.
-#   2. Generate the cargo sources file, otherwise the offline build has no
-#      crate registry:
-#        flatpak-cargo-generator.py Cargo.lock -o packaging/flatpak/cargo-sources.json
-#   3. `flatpak-builder --user --install --force-clean build-dir \
-#        packaging/flatpak/io.github.mahziyarng98.CrabPlayer.yml`
+# Build and install for the current user (packaging/flatpak/build.sh does
+# all of this and also writes a single-file bundle):
+#   packaging/flatpak/cargo-sources.py         # Cargo.lock -> cargo-sources.json
+#   flatpak-builder --user --install --force-clean --install-deps-from=flathub \
+#     packaging/flatpak/build-dir packaging/flatpak/io.github.mahziyarng98.CrabPlayer.yml
 #
-# The runtime provides FFmpeg and VA-API; mpv is built here only for
-# libmpv.so.2, with the command line player and scripting disabled.
+# The freedesktop runtime provides FFmpeg (with the codecs-extra extension
+# for patented codecs, installed automatically from Flathub), libva and
+# Mesa's VA-API drivers. libass, libplacebo and libmpv are built here; mpv
+# only as the library, without the command line player or scripting.
 
 app-id: io.github.mahziyarng98.CrabPlayer
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
@@ -21,21 +21,58 @@ command: crab-player
 
 finish-args:
   - --share=ipc
+  # Native Wayland, X11 only where there is no Wayland.
   - --socket=wayland
   - --socket=fallback-x11
+  # GPU rendering and VA-API hardware decoding.
   - --device=dri
   - --socket=pulseaudio
-  - --filesystem=xdg-videos
-  - --filesystem=xdg-music
-  - --filesystem=xdg-download
-  - --talk-name=org.freedesktop.portal.Desktop
+  # Network streams (File > Open URL).
+  - --share=network
+  # Files come through the file chooser portal and, for "Open with", the
+  # document portal. Drag and drop from file managers hands over plain
+  # paths, which the sandbox can only read in these folders.
+  - --filesystem=xdg-videos:ro
+  - --filesystem=xdg-music:ro
+  - --filesystem=xdg-download:ro
+  # Capture > Save Image writes ~/Pictures/crab-player.
+  - --filesystem=xdg-pictures/crab-player:create
 
 build-options:
   append-path: /usr/lib/sdk/rust-stable/bin
-  env:
-    CARGO_HOME: /run/build/crab-player/cargo
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/doc
+  - /share/man
+  - '*.a'
 
 modules:
+  - name: libass
+    buildsystem: meson
+    config-opts:
+      - -Ddefault_library=shared
+    sources:
+      - type: archive
+        url: https://github.com/libass/libass/releases/download/0.17.4/libass-0.17.4.tar.xz
+        sha256: 78f1179b838d025e9c26e8fef33f8092f65611444ffa1bfc0cfac6a33511a05a
+
+  - name: libplacebo
+    buildsystem: meson
+    config-opts:
+      - -Dvulkan=disabled
+      - -Ddemos=false
+      - -Dtests=false
+      - -Dlcms=enabled
+    sources:
+      # The git checkout brings the bundled submodules (glad, jinja, …)
+      # the build needs.
+      - type: git
+        url: https://github.com/haasn/libplacebo.git
+        tag: v7.360.1
+        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
+
   - name: mpv
     buildsystem: meson
     config-opts:
@@ -44,35 +81,46 @@ modules:
       - -Dlua=disabled
       - -Djavascript=disabled
       - -Dmanpage-build=disabled
-      - -Ddocs=disabled
+      - -Dhtml-build=disabled
+      - -Dpdf-build=disabled
       - -Dbuild-date=false
+      - -Dvulkan=disabled
+      - -Dvaapi=enabled
+      - -Dwayland=enabled
+      - -Dx11=enabled
+      - -Degl=enabled
+      - -Dpulse=enabled
     sources:
-      - type: git
-        url: https://github.com/mpv-player/mpv.git
-        tag: v0.40.0
-        commit: 0000000000000000000000000000000000000000  # pin on first build
+      - type: archive
+        url: https://github.com/mpv-player/mpv/archive/refs/tags/v0.41.0.tar.gz
+        sha256: ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209
 
   - name: crab-player
     buildsystem: simple
+    build-options:
+      env:
+        CARGO_HOME: /run/build/crab-player/cargo
     build-commands:
-      - cargo build --release --locked --offline
+      - cargo --offline build --release --locked
       - install -Dm755 target/release/crab-player /app/bin/crab-player
-      # Flatpak requires the exported desktop file and icon to be named after
-      # the app-id. The binary announces the Wayland app id `crab-player`, so
-      # whether the taskbar icon matches must be checked on the first build.
-      - install -Dm644 packaging/crab-player.desktop
+      - install -Dm644 packaging/io.github.mahziyarng98.CrabPlayer.desktop
         /app/share/applications/io.github.mahziyarng98.CrabPlayer.desktop
-      - desktop-file-edit --set-icon=io.github.mahziyarng98.CrabPlayer
-        /app/share/applications/io.github.mahziyarng98.CrabPlayer.desktop
-      - install -Dm644 assets/icons/hicolor/256x256/apps/crab-player.png
-        /app/share/icons/hicolor/256x256/apps/io.github.mahziyarng98.CrabPlayer.png
-      - install -Dm644 assets/icons/hicolor/128x128/apps/crab-player.png
-        /app/share/icons/hicolor/128x128/apps/io.github.mahziyarng98.CrabPlayer.png
-      - install -Dm644 assets/icons/hicolor/64x64/apps/crab-player.png
-        /app/share/icons/hicolor/64x64/apps/io.github.mahziyarng98.CrabPlayer.png
+      - install -Dm644 packaging/io.github.mahziyarng98.CrabPlayer.metainfo.xml
+        /app/share/metainfo/io.github.mahziyarng98.CrabPlayer.metainfo.xml
+      - for size in 16 24 32 48 64 128 256 512; do
+          install -Dm644 assets/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.CrabPlayer.png
+          /app/share/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.CrabPlayer.png;
+        done
       - install -Dm644 LICENSE /app/share/licenses/io.github.mahziyarng98.CrabPlayer/LICENSE
     sources:
+      # The checkout this manifest lives in. A Flathub submission replaces
+      # this with a git source pinned to the release tag.
       - type: dir
         path: ../..
-      - type: file
-        path: cargo-sources.json
+        skip:
+          - target
+          - dist
+          - packaging/flatpak/build-dir
+          - packaging/flatpak/.flatpak-builder
+          - packaging/flatpak/repo
+      - cargo-sources.json
