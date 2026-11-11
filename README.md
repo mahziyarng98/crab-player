@@ -85,7 +85,7 @@ scripts/uninstall.sh    # removes exactly what install.sh put there
 ```
 
 This installs `~/.local/bin/crab-player`, the desktop entry
-`~/.local/share/applications/crab-player.desktop` and the icons under
+`~/.local/share/applications/io.github.mahziyarng98.CrabPlayer.desktop` and the icons under
 `~/.local/share/icons/hicolor/`. Crab Player shows up in the launcher and
 under "Open with" for video and audio files; your default applications are
 not changed.

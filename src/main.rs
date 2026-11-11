@@ -61,11 +61,13 @@ fn main() -> eframe::Result {
             .with_decorations(false)
             .with_inner_size([1120.0, 700.0])
             .with_min_inner_size(app::MIN_WINDOW_SIZE),
+        // Window state stays in `~/.local/share/crab-player/app.ron`, next
+        // to the other data, instead of a folder named after the app id.
+        persistence_path: eframe::storage_dir(app::APP_SLUG).map(|dir| dir.join("app.ron")),
         ..Default::default()
     };
 
     eframe::run_native(
-        // eframe derives its storage folder from the app id set above.
         app::APP_NAME,
         native_options,
         Box::new(move |cc| {

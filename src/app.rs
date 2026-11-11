@@ -22,10 +22,12 @@ use crate::ui::{self, UiState};
 pub const APP_NAME: &str = "Crab Player";
 /// Name used for the binary, directories and the desktop entry.
 pub const APP_SLUG: &str = "crab-player";
-/// Wayland `app_id` and X11 class. Compositors look up the icon through the
-/// desktop file of the same name (`crab-player.desktop`), so the two must
-/// stay identical.
-pub const APP_ID: &str = APP_SLUG;
+/// Reverse-DNS application id: the Wayland `app_id`, the X11 class, the
+/// desktop file name (`<APP_ID>.desktop`), its `StartupWMClass`, the icon
+/// name, the Flatpak id and the AppStream id. Compositors find the icon
+/// through the desktop file of the same name, so all of them must stay
+/// identical (see docs/packaging.md, "Application id").
+pub const APP_ID: &str = "io.github.mahziyarng98.CrabPlayer";
 /// Application icon, embedded so the window needs no files.
 pub const ICON_PNG: &[u8] = ui::logo::WINDOW_ICON_PNG;
 /// Smallest window, in points (ui-spec §2). Zoom never goes below it.
@@ -1960,6 +1962,22 @@ fn next_delay(current: f64, step: DelayStep) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn app_id_matches_the_packaging() {
+        // The taskbar icon is found through the desktop file named after the
+        // app id; the AppStream and Flatpak ids must be the same string.
+        let desktop = include_str!("../packaging/io.github.mahziyarng98.CrabPlayer.desktop");
+        assert!(desktop.contains(&format!("\nIcon={APP_ID}\n")));
+        assert!(desktop.contains(&format!("\nStartupWMClass={APP_ID}\n")));
+        let metainfo = include_str!("../packaging/io.github.mahziyarng98.CrabPlayer.metainfo.xml");
+        assert!(metainfo.contains(&format!("<id>{APP_ID}</id>")));
+        assert!(metainfo.contains(&format!(
+            "<launchable type=\"desktop-id\">{APP_ID}.desktop</launchable>"
+        )));
+        let flatpak = include_str!("../packaging/flatpak/io.github.mahziyarng98.CrabPlayer.yml");
+        assert!(flatpak.contains(&format!("\napp-id: {APP_ID}\n")));
+    }
 
     #[test]
     fn delay_steps_stay_on_the_grid() {

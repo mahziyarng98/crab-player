@@ -10,7 +10,7 @@ Build-Depends:
  libmpv-dev,
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
-Homepage: https://github.com/your-org/crab-player
+Homepage: https://github.com/mahziyarng98/crab-player
 
 Package: crab-player
 Architecture: any

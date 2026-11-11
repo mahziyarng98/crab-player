@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: crab-player
-Source: https://github.com/your-org/crab-player
+Source: https://github.com/mahziyarng98/crab-player
 
 Files: *
 Copyright: 2026 The Crab Player authors

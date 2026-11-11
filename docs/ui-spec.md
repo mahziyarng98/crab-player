@@ -50,8 +50,9 @@ Screenshots: `docs/screenshots/`.
   (`ViewportCommand::BeginResize`), except where the seek bar reaches the
   edge.
 - View ▸ "Caption & Menu" (`Ctrl+M`) hides and shows the strip.
-- App id `crab-player` (Wayland `app_id` and X11 class), matching
-  `crab-player.desktop`; the window title is "Crab Player".
+- App id `io.github.mahziyarng98.CrabPlayer` (Wayland `app_id` and X11 class), matching
+  `io.github.mahziyarng98.CrabPlayer.desktop` and its `StartupWMClass`; the window title is
+  "Crab Player". The binary, config and data folders stay `crab-player`.
 - Minimum size 640×400; default 1120×700.
 - Full screen is a viewport command, so the compositor handles workspace
   and focus correctly.

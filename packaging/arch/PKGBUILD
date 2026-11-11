@@ -4,7 +4,7 @@ pkgver=0.1.0
 pkgrel=1
 pkgdesc="Fast native media player built with Rust, egui and libmpv"
 arch=('x86_64' 'aarch64')
-url="https://github.com/your-org/crab-player"
+url="https://github.com/mahziyarng98/crab-player"
 license=('MIT')
 # mpv provides libmpv.so.2. Codec support comes from FFmpeg: Arch's `ffmpeg`
 # is the full build (all decoders, dav1d for AV1, libvpx, …), so "plays
@@ -22,7 +22,7 @@ optdepends=(
   'nvidia-utils: NVDEC hardware decoding on NVIDIA'
   'libxcursor: cursor themes on X11'
 )
-source=("$pkgname-$pkgver.tar.gz::https://github.com/your-org/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
+source=("$pkgname-$pkgver.tar.gz::https://github.com/mahziyarng98/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 
 build() {
@@ -40,11 +40,11 @@ check() {
 package() {
   cd "$pkgname-$pkgver"
   install -Dm755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
-  install -Dm644 packaging/crab-player.desktop \
-    "$pkgdir/usr/share/applications/crab-player.desktop"
+  install -Dm644 packaging/io.github.mahziyarng98.CrabPlayer.desktop \
+    "$pkgdir/usr/share/applications/io.github.mahziyarng98.CrabPlayer.desktop"
   for size in 16 24 32 48 64 128 256 512; do
-    install -Dm644 "assets/icons/hicolor/${size}x${size}/apps/crab-player.png" \
-      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/crab-player.png"
+    install -Dm644 "assets/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.CrabPlayer.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.CrabPlayer.png"
   done
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"

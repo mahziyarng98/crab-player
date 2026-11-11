@@ -20,11 +20,11 @@ override_dh_auto_test:
 override_dh_auto_install:
 	install -Dm755 target/release/crab-player \
 		debian/crab-player/usr/bin/crab-player
-	install -Dm644 packaging/crab-player.desktop \
-		debian/crab-player/usr/share/applications/crab-player.desktop
+	install -Dm644 packaging/io.github.mahziyarng98.CrabPlayer.desktop \
+		debian/crab-player/usr/share/applications/io.github.mahziyarng98.CrabPlayer.desktop
 	for size in 16 24 32 48 64 128 256 512; do \
-		install -Dm644 assets/icons/hicolor/$${size}x$${size}/apps/crab-player.png \
-			debian/crab-player/usr/share/icons/hicolor/$${size}x$${size}/apps/crab-player.png; \
+		install -Dm644 assets/icons/hicolor/$${size}x$${size}/apps/io.github.mahziyarng98.CrabPlayer.png \
+			debian/crab-player/usr/share/icons/hicolor/$${size}x$${size}/apps/io.github.mahziyarng98.CrabPlayer.png; \
 	done
 	install -Dm644 README.md \
 		debian/crab-player/usr/share/doc/crab-player/README.md

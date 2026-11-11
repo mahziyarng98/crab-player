@@ -439,10 +439,13 @@ mpv render API.
 - **Flatpak**: `packaging/flatpak/` on `org.freedesktop.Platform`; mpv is
   built as a module with `-Dlibmpv=true`. Not built yet.
 
-All targets install the same `crab-player.desktop` and the hicolor icons
-from `assets/icons/`. The desktop file name, its `StartupWMClass`, the
-Wayland app id and the X11 class are all `crab-player`, which is what lets
-compositors show the right icon.
+All targets install the same `io.github.mahziyarng98.CrabPlayer.desktop`, the AppStream file
+`io.github.mahziyarng98.CrabPlayer.metainfo.xml` and the hicolor icons from `assets/icons/`. The desktop
+file name, its `StartupWMClass`, the icon name, the Wayland app id, the X11
+class, the Flatpak id and the AppStream id are all `io.github.mahziyarng98.CrabPlayer` (`app::APP_ID`,
+checked by a unit test), which is what lets compositors and software centres
+show the right icon. The binary, the config folder and the data folder keep
+the short name `crab-player`. See docs/packaging.md.
 
 ## 9. Roadmap
 

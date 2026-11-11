@@ -6,8 +6,9 @@
 #
 # Installs into $PREFIX (default ~/.local):
 #   bin/crab-player
-#   share/applications/crab-player.desktop       (Exec = absolute path above)
-#   share/icons/hicolor/<size>x<size>/apps/crab-player.png
+#   share/applications/io.github.mahziyarng98.CrabPlayer.desktop   (Exec = absolute path above)
+#   share/icons/hicolor/<size>x<size>/apps/io.github.mahziyarng98.CrabPlayer.png
+#   share/metainfo/io.github.mahziyarng98.CrabPlayer.metainfo.xml
 #   share/crab-player/install-manifest           (what uninstall.sh removes)
 #
 # The desktop entry lists the media types Crab Player opens, so it appears
@@ -51,20 +52,26 @@ installed=()
 install -m 755 "$binary" "$bin_dir/crab-player"
 installed+=("$bin_dir/crab-player")
 
-desktop="$app_dir/crab-player.desktop"
+app_id="io.github.mahziyarng98.CrabPlayer"
+desktop="$app_dir/$app_id.desktop"
 # Exec gets the absolute path: ~/.local/bin is not on PATH in every
 # session that launches desktop entries.
 sed "s|^Exec=crab-player |Exec=$bin_dir/crab-player |" \
-    "$root/packaging/crab-player.desktop" >"$desktop"
+    "$root/packaging/$app_id.desktop" >"$desktop"
 chmod 644 "$desktop"
 installed+=("$desktop")
 
 for size in 16 24 32 48 64 128 256 512; do
     dir="$icon_root/${size}x${size}/apps"
     mkdir -p "$dir"
-    install -m 644 "$root/assets/icons/hicolor/${size}x${size}/apps/crab-player.png" "$dir/crab-player.png"
-    installed+=("$dir/crab-player.png")
+    install -m 644 "$root/assets/icons/hicolor/${size}x${size}/apps/$app_id.png" "$dir/$app_id.png"
+    installed+=("$dir/$app_id.png")
 done
+
+metainfo_dir="$prefix/share/metainfo"
+mkdir -p "$metainfo_dir"
+install -m 644 "$root/packaging/$app_id.metainfo.xml" "$metainfo_dir/$app_id.metainfo.xml"
+installed+=("$metainfo_dir/$app_id.metainfo.xml")
 
 printf '%s\n' "${installed[@]}" >"$manifest"
 
