@@ -152,13 +152,21 @@ impl PlayerApp {
             app.ui.flash("Menu hidden · Ctrl+M brings it back");
         }
         if let Some(reason) = player::engine_unavailable() {
-            app.ui.error(
-                "Playback is unavailable: libmpv is not installed",
-                format!(
-                    "Install libmpv2 (Debian, Ubuntu, openSUSE), mpv-libs (Fedora) or \
-                     mpv (Arch), then restart Crab Player. ({reason})"
-                ),
-            );
+            let (title, detail) = if reason.contains("libmpv") {
+                (
+                    "Playback is unavailable: libmpv is not installed",
+                    format!(
+                        "Install libmpv2 (Debian, Ubuntu, openSUSE), mpv-libs (Fedora) or \
+                         mpv (Arch), then restart Crab Player. ({reason})"
+                    ),
+                )
+            } else {
+                (
+                    "Playback is unavailable: a library libmpv needs is missing",
+                    format!("Install the missing library, then restart Crab Player. ({reason})"),
+                )
+            };
+            app.ui.error(title, detail);
         }
         if let Some(warning) = config_warning {
             app.ui

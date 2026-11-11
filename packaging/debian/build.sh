@@ -43,10 +43,18 @@ export DEBIAN_FRONTEND=noninteractive
 # Keep downloaded packages (the image deletes them by default), so a
 # cached /var/cache/apt makes the next container build quicker.
 rm -f /etc/apt/apt.conf.d/docker-clean
-apt-get update -qq
+echo 'Acquire::Retries "10";' >/etc/apt/apt.conf.d/80-retries
+for attempt in 1 2 3 4 5; do
+    apt-get update -qq 2>&1 | grep -q '^[WE]: Failed to fetch' || break
+    [ "$attempt" = 5 ] && { echo "apt-get update kept failing" >&2; exit 1; }
+    sleep 15
+done
 apt-get install -y -qq --no-install-recommends \
     build-essential ca-certificates curl debhelper fakeroot pkg-config \
     libmpv-dev >/dev/null
+# A toolchain cached in a volume is used as is.
+# shellcheck disable=SC1091
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 if ! command -v cargo >/dev/null || ! cargo --version | grep -q "$rust_version"; then
     curl -sSf --retry 5 --retry-all-errors https://sh.rustup.rs |
         RUSTUP_MAX_RETRIES=20 sh -s -- -y -q --profile minimal --default-toolchain "$rust_version"

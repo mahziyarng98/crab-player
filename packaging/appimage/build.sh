@@ -15,10 +15,10 @@
 # FFmpeg 4.4 from Ubuntu 22.04 with its codec libraries, libass, libpulse.
 # What is NOT bundled, so the host's drivers keep working: glibc, libstdc++,
 # libGL/libEGL/libGLX/libgbm/libdrm/libvulkan, the X11 core and Wayland
-# client libraries, libxkbcommon, ALSA, D-Bus, fontconfig/freetype/
-# harfbuzz. libva and libvdpau are shipped in a fallback directory that is
-# used only when the host has no libva of its own, so VA-API uses the host's
-# libva together with the host's VA drivers.
+# client libraries, libxkbcommon, D-Bus, fontconfig/freetype/harfbuzz.
+# libva, libvdpau and libasound are shipped as per-library fallbacks that
+# AppRun uses only when the host lacks that library, so VA-API normally
+# runs on the host's libva and drivers and ALSA on the host's plugins.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -67,10 +67,15 @@ echo "== build dependencies"
 # Keep downloaded packages (the image deletes them by default), so a
 # cached /var/cache/apt makes the next container build quicker.
 rm -f /etc/apt/apt.conf.d/docker-clean
-apt-get update -qq
+echo 'Acquire::Retries "10";' >/etc/apt/apt.conf.d/80-retries
+for attempt in 1 2 3 4 5; do
+    apt-get update -qq 2>&1 | grep -q '^[WE]: Failed to fetch' || break
+    [ "$attempt" = 5 ] && { echo "apt-get update kept failing" >&2; exit 1; }
+    sleep 15
+done
 apt-get install -y -qq --no-install-recommends \
     build-essential ca-certificates curl file patchelf pkg-config python3 \
-    meson ninja-build desktop-file-utils appstream \
+    ninja-build desktop-file-utils appstream \
     libavcodec-dev libavformat-dev libavutil-dev libavfilter-dev \
     libswresample-dev libswscale-dev libavdevice-dev \
     libass-dev libfreetype-dev libfribidi-dev libharfbuzz-dev libfontconfig-dev \
@@ -79,6 +84,9 @@ apt-get install -y -qq --no-install-recommends \
     libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxss-dev libxpresent-dev \
     libpulse-dev libasound2-dev zlib1g-dev >/dev/null
 
+# A toolchain cached in a volume is used as is.
+# shellcheck disable=SC1091
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 if ! command -v cargo >/dev/null || ! cargo --version | grep -q "$rust_version"; then
     echo "== Rust $rust_version"
     curl -sSf --retry 5 --retry-all-errors https://sh.rustup.rs |
@@ -95,6 +103,15 @@ if [ -d /host-registry/cache ]; then
         --target x86_64-unknown-linux-gnu >/dev/null 2>&1) ||
         (cd "$src" && CARGO_TARGET_DIR=/tmp/fetch cargo fetch --locked --target x86_64-unknown-linux-gnu)
 fi
+
+# mpv needs meson 0.62 or newer; Ubuntu 22.04 has 0.61.
+if [ ! -f "$cache/meson-1.4.1/meson.py" ]; then
+    curl -sSfL --retry 5 --retry-all-errors -o "$cache/meson.tar.gz" \
+        https://github.com/mesonbuild/meson/releases/download/1.4.1/meson-1.4.1.tar.gz
+    echo "1b8aad738a5f6ae64294cc8eaba9a82988c1c420204484ac02ef782e5bba5f49  $cache/meson.tar.gz" | sha256sum -c -
+    tar -C "$cache" -xzf "$cache/meson.tar.gz"
+fi
+meson() { python3 "$cache/meson-1.4.1/meson.py" "$@"; }
 
 echo "== libmpv $mpv_version"
 mpv_prefix="$cache/mpv-$mpv_version"
@@ -157,27 +174,33 @@ cp -L "$mpv_prefix/lib/libmpv.so.2" "$lib/"
 
 # Libraries that must come from the host: the C runtime, the GPU and
 # windowing stack (they have to match the host's drivers and compositor),
-# and system services whose configuration lives on the host.
-host_only='^(ld-linux.*|libc|libm|libdl|libpthread|librt|libresolv|libutil|libanl|libnsl|libBrokenLocale|libmvec|libstdc\+\+|libgcc_s|libGL|libGLX|libGLdispatch|libOpenGL|libEGL|libGLESv1_CM|libGLESv2|libgbm|libdrm.*|libvulkan|libX11|libX11-xcb|libxcb.*|libXau|libXdmcp|libwayland-.*|libxkbcommon.*|libasound|libdbus-1|libsystemd|libudev|libfontconfig|libfreetype|libharfbuzz|libexpat|libz|libuuid|libselinux|libgcrypt|libgpg-error|libcap|libpcre.*|libffi)\.so'
-# Used from the host when present, from the bundle otherwise.
-fallback_only='^(libva|libva-drm|libva-x11|libva-wayland|libvdpau)\.so'
+# and system services whose configuration lives on the host. Everything
+# else is bundled, including libraries whose soname or presence differs
+# between distributions (libpcre.so.3 and libselinux are missing on Arch,
+# for example).
+host_only='^(ld-linux.*|libc|libm|libdl|libpthread|librt|libresolv|libutil|libanl|libnsl|libBrokenLocale|libmvec|libstdc\+\+|libgcc_s|libGL|libGLX|libGLdispatch|libOpenGL|libEGL|libGLESv1_CM|libGLESv2|libgbm|libdrm.*|libvulkan|libX11|libX11-xcb|libxcb.*|libXau|libXdmcp|libwayland-.*|libxkbcommon.*|libdbus-1|libsystemd|libudev|libfontconfig|libfreetype|libharfbuzz|libexpat|libz|libuuid)\.so'
+# Used from the host when present, from the bundle otherwise: libva must
+# match the host's VA drivers and libasound the host's ALSA plugins, but a
+# minimal system may have neither. Each one gets its own directory, so
+# AppRun can add exactly the ones the host lacks.
+fallback_only='^(libva|libva-drm|libva-x11|libva-wayland|libvdpau|libasound)\.so'
 
 copy_deps() { # <elf>: copy the bundleable libraries it needs, recursively
     ldd "$1" | awk '/=> \//{print $1" "$3}' | while read -r name path; do
         if [[ "$name" =~ $host_only ]]; then continue; fi
         dest="$lib"
-        if [[ "$name" =~ $fallback_only ]]; then dest="$fallback"; fi
+        if [[ "$name" =~ $fallback_only ]]; then dest="$fallback/$name"; mkdir -p "$dest"; fi
         [ -e "$dest/$name" ] && continue
         cp -L "$path" "$dest/$name"
         copy_deps "$path"
     done
 }
 copy_deps "$lib/libmpv.so.2"
-chmod 644 "$lib"/*.so* "$fallback"/*.so* 2>/dev/null || true
+chmod 644 "$lib"/*.so* "$fallback"/*/*.so* 2>/dev/null || true
 # Each bundled library finds its siblings next to itself, without
 # LD_LIBRARY_PATH (which would leak into programs the player starts).
 for so in "$lib"/*.so*; do patchelf --set-rpath '$ORIGIN' "$so"; done
-for so in "$fallback"/*.so*; do patchelf --set-rpath '$ORIGIN/..:$ORIGIN' "$so"; done
+for so in "$fallback"/*/*.so*; do patchelf --set-rpath '$ORIGIN/../..' "$so"; done
 
 desktop="$appdir/usr/share/applications/$app_id.desktop"
 install -m 644 "packaging/$app_id.desktop" "$desktop"
@@ -194,18 +217,24 @@ cat >"$appdir/AppRun" <<'EOF'
 #!/bin/sh
 # Crab Player AppImage entry point.
 here="$(dirname "$(readlink -f "$0")")"
-# libva/libvdpau come from the host whenever it has them, so the host's VA
-# drivers are loaded by a matching libva; the bundled copies are only a
-# fallback for systems without any.
-if ! /sbin/ldconfig -p 2>/dev/null | grep -q 'libva\.so\.2 '; then
-    export LD_LIBRARY_PATH="$here/usr/lib/fallback${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-fi
+# libva, libvdpau and libasound come from the host whenever it has them
+# (they must match the host's VA drivers and ALSA plugins); a bundled copy
+# is used only for a library the host does not have.
+cache="$( (/sbin/ldconfig -p || /usr/sbin/ldconfig -p || ldconfig -p) 2>/dev/null)"
+for dir in "$here"/usr/lib/fallback/*/; do
+    [ -d "$dir" ] || continue
+    name="$(basename "$dir")"
+    if ! printf '%s\n' "$cache" | grep -q "^[[:space:]]*$name "; then
+        LD_LIBRARY_PATH="${dir%/}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    fi
+done
+[ -n "${LD_LIBRARY_PATH:-}" ] && export LD_LIBRARY_PATH
 exec "$here/usr/bin/crab-player" "$@"
 EOF
 chmod 755 "$appdir/AppRun"
 
 echo "== bundled libraries"
-ls "$lib" "$fallback" | sed 's/^/  /'
+ls "$lib" "$fallback"/* | sed 's/^/  /'
 
 echo "== AppImage"
 tool="$cache/appimagetool-x86_64.AppImage"

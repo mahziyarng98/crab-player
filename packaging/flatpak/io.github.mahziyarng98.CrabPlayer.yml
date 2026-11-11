@@ -49,6 +49,17 @@ cleanup:
   - '*.a'
 
 modules:
+  # mpv's X11 support (VA-API interop on X11 sessions) needs it; the SDK
+  # does not have it.
+  - name: libXpresent
+    buildsystem: autotools
+    config-opts:
+      - --disable-static
+    sources:
+      - type: archive
+        url: https://www.x.org/releases/individual/lib/libXpresent-1.0.1.tar.xz
+        sha256: b964df9e5a066daa5e08d2dc82692c57ca27d00b8cc257e8e960c9f1cf26231b
+
   - name: libass
     buildsystem: meson
     config-opts:
@@ -100,6 +111,9 @@ modules:
     build-options:
       env:
         CARGO_HOME: /run/build/crab-player/cargo
+        # libmpv2-sys links -lmpv (resolved by the built-in shim and then
+        # dropped); cargo does not read LDFLAGS, so name the directory.
+        LIBRARY_PATH: /app/lib
     build-commands:
       - cargo --offline build --release --locked
       - install -Dm755 target/release/crab-player /app/bin/crab-player

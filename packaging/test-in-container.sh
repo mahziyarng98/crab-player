@@ -26,7 +26,13 @@ trap 'rm -rf "$clip_dir"' EXIT
 ffmpeg -v error -f lavfi -i "testsrc2=s=640x360:r=30:d=8" -f lavfi -i "sine=d=8" \
     -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -shortest "$clip_dir/clip.mkv"
 
+# Package downloads are cached per image in named volumes, so running the
+# test again does not fetch Mesa and Xvfb again.
+cache_tag="$(printf '%s' "$image" | tr -c 'a-zA-Z0-9' '-')"
 "$engine" run --rm \
+    -v "crab-player-test-$cache_tag-apt:/var/cache/apt/archives" \
+    -v "crab-player-test-$cache_tag-dnf:/var/cache/libdnf5" \
+    -v "crab-player-test-$cache_tag-zypp:/var/cache/zypp/packages" \
     -v "$artifact:/pkg/$(basename "$artifact"):ro" -v "$clip_dir:/clip:ro" \
     "$image" bash -euo pipefail -c '
 pkg="$(ls /pkg/*)"
@@ -39,18 +45,24 @@ esac
 case "$kind" in
   apt)
     export DEBIAN_FRONTEND=noninteractive
-    apt-get update -qq
+    rm -f /etc/apt/apt.conf.d/docker-clean
+    echo "Acquire::Retries \"10\";" >/etc/apt/apt.conf.d/80-retries
+    for attempt in 1 2 3 4 5; do
+      apt-get update -qq 2>&1 | grep -q "^[WE]: Failed to fetch" || break
+      sleep 15
+    done
     extra=""; case "$pkg" in *.deb) extra="$pkg" ;; esac
     apt-get install -y -qq --no-install-recommends xvfb libgl1-mesa-dri libgl1 libegl1 \
         libwayland-client0 libwayland-egl1 libwayland-cursor0 libxkbcommon0 libxkbcommon-x11-0 \
         libxcursor1 libxi6 libxrandr2 $extra >/dev/null ;;
   dnf)
     extra=""; case "$pkg" in *.rpm) extra="$pkg" ;; esac
-    dnf install -y -q xorg-x11-server-Xvfb mesa-dri-drivers mesa-libEGL mesa-libGL \
+    dnf install -y -q --setopt=keepcache=True xorg-x11-server-Xvfb mesa-dri-drivers mesa-libEGL mesa-libGL \
         libwayland-client libwayland-egl libwayland-cursor libxkbcommon libxkbcommon-x11 \
         libXcursor libXi libXrandr findutils $extra >/dev/null ;;
   zypper)
     extra=""; case "$pkg" in *.rpm) extra="$pkg" ;; esac
+    zypper --non-interactive -q modifyrepo --keep-packages --all >/dev/null
     zypper --non-interactive -q install --allow-unsigned-rpm xorg-x11-server-Xvfb Mesa-dri \
         Mesa-libEGL1 Mesa-libGL1 libwayland-client0 libwayland-egl1 libwayland-cursor0 \
         libxkbcommon0 libxkbcommon-x11-0 libXcursor1 libXi6 libXrandr2 findutils $extra >/dev/null ;;

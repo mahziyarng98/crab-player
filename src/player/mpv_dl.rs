@@ -133,6 +133,16 @@ fn fatal(message: &str) -> ! {
 /// What to tell people when libmpv cannot be loaded: the reason, then the
 /// package to install on each distribution family.
 pub fn missing_help(reason: &str) -> String {
+    // libmpv itself was found, but a library it links could not be loaded:
+    // installing libmpv again would not help.
+    if !reason.contains("libmpv") {
+        return format!(
+            "Crab Player found libmpv ({SONAME}), but a library it needs is missing:\n  \
+             {reason}\n\n\
+             Install that library with your package manager, or reinstall your \
+             distribution's mpv/libmpv package so its dependencies are pulled in."
+        );
+    }
     format!(
         "Crab Player needs libmpv ({SONAME}) for playback, but it could not be loaded:\n  \
          {reason}\n\n\
@@ -161,6 +171,14 @@ mod tests {
             assert!(help.contains(package), "{package} missing from:\n{help}");
         }
         assert!(help.contains("cannot open shared object file"));
+    }
+
+    #[test]
+    fn a_missing_dependency_of_libmpv_is_named_as_such() {
+        let help = missing_help("libasound.so.2: cannot open shared object file");
+        assert!(help.contains("found libmpv"), "{help}");
+        assert!(help.contains("libasound.so.2"), "{help}");
+        assert!(!help.contains("apt install libmpv2"), "{help}");
     }
 
     #[test]

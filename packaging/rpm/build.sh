@@ -45,6 +45,9 @@ if command -v dnf >/dev/null; then
 else
     zypper --non-interactive -q install rpm-build gcc pkgconf mpv-devel desktop-file-utils tar gzip curl >/dev/null
 fi
+# A toolchain cached in a volume is used as is.
+# shellcheck disable=SC1091
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 if ! command -v cargo >/dev/null || ! cargo --version | grep -q "$rust_version"; then
     curl -sSf --retry 5 --retry-all-errors https://sh.rustup.rs |
         RUSTUP_MAX_RETRIES=20 sh -s -- -y -q --profile minimal --default-toolchain "$rust_version"
