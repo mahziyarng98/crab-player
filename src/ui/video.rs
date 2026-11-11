@@ -87,7 +87,7 @@ impl PixelRect {
 pub fn physical_rect(rect: egui::Rect, pixels_per_point: f32, screen_px: [u32; 2]) -> PixelRect {
     let screen_width = i32::try_from(screen_px[0]).unwrap_or(i32::MAX);
     let screen_height = i32::try_from(screen_px[1]).unwrap_or(i32::MAX);
-    if !(pixels_per_point.is_finite() && pixels_per_point > 0.0) || !rect.is_finite() {
+    if !(pixels_per_point.is_finite() && pixels_per_point > 0.0 && rect.is_finite()) {
         return PixelRect {
             left: 0,
             top: 0,
