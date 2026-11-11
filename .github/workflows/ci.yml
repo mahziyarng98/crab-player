@@ -33,27 +33,22 @@ jobs:
       - name: Install build dependencies
         run: |
           set -euo pipefail
-          # The ubuntu-24.04 image resolves apt through
-          # azure.archive.ubuntu.com, which intermittently fails to resolve on
-          # hosted runners ("Temporary failure resolving …"). Retry with
-          # bounded timeouts and fall back to the canonical Ubuntu mirror, so
-          # a mirror problem fails the job instead of hanging it.
-          apt() {
-            sudo apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 \
-              -o Acquire::https::Timeout=30 "$@"
-          }
-          for attempt in 1 2 3; do
-            if apt update -qq && apt install -y -qq --no-install-recommends \
-                libmpv-dev pkg-config; then
-              exit 0
-            fi
-            echo "::warning::apt attempt ${attempt} failed; retrying with archive.ubuntu.com"
-            sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
-              /etc/apt/apt-mirrors.txt || true
-            sleep 10
-          done
-          echo "::error::could not install the build dependencies"
-          exit 1
+          # The ubuntu-24.04 image sends apt to azure.archive.ubuntu.com,
+          # which does not resolve from every runner pool: each lookup hung
+          # ~26 s and apt tried it four times per repository, so the job sat
+          # here for twelve minutes and then failed. Point apt at the
+          # canonical archive first and bound every call, so a network
+          # problem fails fast (and visibly) instead of hanging.
+          sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
+            /etc/apt/apt-mirrors.txt || true
+          getent hosts archive.ubuntu.com >/dev/null ||
+            echo "::warning::archive.ubuntu.com does not resolve either"
+          sudo timeout 180 apt-get update -qq \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
+            -o Acquire::https::Timeout=20
+          sudo timeout 300 apt-get install -y -qq --no-install-recommends \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
+            libmpv-dev pkg-config
       - name: Install Rust ${{ env.RUST_VERSION }}
         run: |
           rustup toolchain install "$RUST_VERSION" --profile minimal -c rustfmt,clippy
@@ -82,22 +77,14 @@ jobs:
         run: |
           set -euo pipefail
           # See the apt comment in the check job above.
-          apt() {
-            sudo apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 \
-              -o Acquire::https::Timeout=30 "$@"
-          }
-          for attempt in 1 2 3; do
-            if apt update -qq && apt install -y -qq --no-install-recommends \
-                appstream desktop-file-utils shellcheck; then
-              exit 0
-            fi
-            echo "::warning::apt attempt ${attempt} failed; retrying with archive.ubuntu.com"
-            sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
-              /etc/apt/apt-mirrors.txt || true
-            sleep 10
-          done
-          echo "::error::could not install the validators"
-          exit 1
+          sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
+            /etc/apt/apt-mirrors.txt || true
+          sudo timeout 180 apt-get update -qq \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
+            -o Acquire::https::Timeout=20
+          sudo timeout 300 apt-get install -y -qq --no-install-recommends \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
+            appstream desktop-file-utils shellcheck
       - name: Validate
         run: |
           desktop-file-validate packaging/io.github.mahziyarng98.CrabPlayer.desktop
