@@ -2,9 +2,22 @@ name: Release
 
 # Pushing a version tag (v0.1.0, …) builds every package and publishes them,
 # with SHA-256 sums, as a GitHub release for that tag.
+#
+# The AppImage job calls packaging/appimage/build.sh, which pins
+# appimagetool 1.9.1 and the type2 runtime 20251108 to their release URLs
+# and verifies both SHA-256 checksums before using them.
 on:
   push:
     tags: ["v*"]
+  # Manual run: builds every package as downloadable artifacts and publishes
+  # nothing unless run on a v* tag with "publish" checked. Use this to test
+  # a release without creating a tag.
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a release (needs a v* tag ref)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -111,8 +124,9 @@ jobs:
   release:
     name: Publish the release
     needs: [appimage, deb, rpm, arch, flatpak]
-    # Runs when the required packages built, even if the Flatpak did not.
-    if: ${{ !cancelled() && needs.appimage.result == 'success' && needs.deb.result == 'success' && needs.rpm.result == 'success' && needs.arch.result == 'success' }}
+    # Runs when the required packages built, even if the Flatpak did not;
+    # a manual run only publishes when asked for and run on a v* tag.
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish) && needs.appimage.result == 'success' && needs.deb.result == 'success' && needs.rpm.result == 'success' && needs.arch.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -132,4 +146,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" dist/* --title "Crab Player ${TAG#v}" --generate-notes --verify-tag
+        run: |
+          # A checked-in notes file wins; otherwise let GitHub generate the
+          # notes from the commits.
+          notes=(--generate-notes)
+          if [ -f "docs/release-notes/$TAG.md" ]; then
+            notes=(--notes-file "docs/release-notes/$TAG.md")
+          fi
+          gh release create "$TAG" dist/* --title "Crab Player ${TAG#v}" \
+            "${notes[@]}" --verify-tag
