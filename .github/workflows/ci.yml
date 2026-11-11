@@ -73,6 +73,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Network diagnostics
+        run: |
+          cat /etc/resolv.conf
+          env | grep -i proxy || echo "no proxy variables"
+          for h in github.com api.github.com codeload.github.com \
+                   static.rust-lang.org static.crates.io deb.debian.org \
+                   archive.ubuntu.com azure.archive.ubuntu.com pypi.org; do
+            printf '%-28s ' "$h"
+            timeout 5 getent hosts "$h" | head -1 || echo "FAILED"
+          done
+          curl -sS -m 10 -o /dev/null -w 'https github.com %{http_code}\n' https://github.com || true
+          curl -sS -m 10 -o /dev/null -w 'https archive.ubuntu.com %{http_code}\n' https://archive.ubuntu.com/ubuntu/ || true
       - name: Install validators
         run: |
           set -euo pipefail
