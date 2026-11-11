@@ -60,45 +60,110 @@ Taken from the running app on Hyprland at 1.25× scale.
 Planned, and shown disabled in the menus: equalizer, shaders, thumbnails
 and GIF capture, DVD/BD navigation, a shortcut editor.
 
-## Install and run
+## Install
 
-### Dependencies
+### Which package should I choose?
 
-Runtime: `libmpv` 0.35 or newer (`libmpv.so.2`), FFmpeg, an OpenGL 3.0 /
-GLES 3.0 driver, Wayland or X11. Optional: `xdg-desktop-portal` (plus a
-backend such as `xdg-desktop-portal-gtk`) for the file dialogs, and a
-VA-API driver for hardware decoding.
+| You use | Pick | Why |
+| --- | --- | --- |
+| Arch, Manjaro, EndeavourOS | the Arch package (`PKGBUILD`, AUR once published) | native, uses the system mpv and FFmpeg |
+| Debian 12+, Ubuntu 24.04+ and derivatives | the `.deb` | native, updates with the system libraries |
+| Fedora, openSUSE Tumbleweed | the `.rpm` | native; add RPM Fusion / Packman for all codecs |
+| Ubuntu 22.04, RHEL 9 / Alma / Rocky, openSUSE Leap 15, or anything else | the Flatpak, or the AppImage | carry their own libmpv and FFmpeg |
+| You want nothing installed system-wide | the AppImage | one file, runs from anywhere |
+| A distribution with its own libmpv but no package above | the tarball + `install.sh` | prebuilt binary, uses the system libmpv |
 
-| Distribution | Build and runtime packages |
-| --- | --- |
-| Arch | `sudo pacman -S --needed base-devel rust mpv ffmpeg` (optional: `xdg-desktop-portal-gtk`, `libva-mesa-driver` or `intel-media-driver`) |
-| Debian / Ubuntu (untested) | `sudo apt install build-essential cargo pkg-config libmpv-dev libmpv2 ffmpeg libavcodec-extra` (optional: `xdg-desktop-portal-gtk`, `mesa-va-drivers` or `intel-media-va-driver`) |
+Release files appear on the
+[releases page](https://github.com/mahziyarng98/crab-player/releases) once a
+version is tagged. Every package can also be built from this checkout; see
+[`docs/packaging.md`](docs/packaging.md) for how each one is made and what
+was tested.
 
-Rust 1.95 or newer is required.
-
-### Install for your user (no root)
-
-```sh
-scripts/install.sh      # builds the release binary and installs it into ~/.local
-crab-player             # or start "Crab Player" from the application launcher
-scripts/uninstall.sh    # removes exactly what install.sh put there
-```
-
-This installs `~/.local/bin/crab-player`, the desktop entry
-`~/.local/share/applications/crab-player.desktop` and the icons under
-`~/.local/share/icons/hicolor/`. Crab Player shows up in the launcher and
-under "Open with" for video and audio files; your default applications are
-not changed.
-
-### Arch package (system-wide)
+### Arch Linux
 
 ```sh
-packaging/arch/build-local.sh                               # builds target/arch/*.pkg.tar.zst
-sudo pacman -U target/arch/crab-player-0.1.0-1-x86_64.pkg.tar.zst
+packaging/arch/build-local.sh              # builds target/arch/crab-player-<version>-1-x86_64.pkg.tar.zst
+sudo pacman -U target/arch/crab-player-*-x86_64.pkg.tar.zst
 ```
 
-See [`packaging/README.md`](packaging/README.md) for Debian and Flatpak
-(both untested).
+### Debian and Ubuntu
+
+```sh
+sudo apt install ./crab-player_0.1.0-1_amd64.deb
+sudo apt install libavcodec-extra          # optional: the codecs Debian ships separately
+```
+
+Needs `libmpv2` (Debian 12+, Ubuntu 23.04+). Ubuntu 22.04 only has
+`libmpv1`, which is too old: use the Flatpak or the AppImage there.
+
+### Fedora and openSUSE
+
+```sh
+sudo dnf install ./crab-player-0.1.0-1.fc45.x86_64.rpm          # Fedora
+sudo zypper install ./crab-player-0.1.0-1.fc45.x86_64.rpm       # openSUSE Tumbleweed
+```
+
+Fedora's own FFmpeg leaves out H.264, HEVC and other patented codecs.
+Enable [RPM Fusion](https://rpmfusion.org) and run
+`sudo dnf swap ffmpeg-free ffmpeg --allowerasing` for all of them; on
+openSUSE the [Packman](https://en.opensuse.org/Additional_package_repositories#Packman)
+repository does the same.
+
+### Flatpak
+
+```sh
+flatpak install --user ./Crab_Player-0.1.0-x86_64.flatpak
+flatpak run io.github.mahziyarng98.CrabPlayer
+```
+
+The Freedesktop runtime it uses brings FFmpeg, and its `codecs-extra`
+extension the patented codecs; both are installed from Flathub.
+
+### AppImage
+
+```sh
+chmod +x Crab_Player-0.1.0-x86_64.AppImage
+./Crab_Player-0.1.0-x86_64.AppImage movie.mkv
+```
+
+Runs on any x86_64 distribution with glibc 2.35 or newer, with or without
+mpv installed. Graphics and VA-API drivers are the system's own.
+
+### Tarball, or from this checkout
+
+```sh
+tar xf crab-player-0.1.0-linux-x86_64.tar.gz && cd crab-player-0.1.0-linux-x86_64
+scripts/install.sh                         # for your user, into ~/.local (no root)
+sudo scripts/install.sh --prefix /usr/local  # or system-wide
+scripts/uninstall.sh                       # removes exactly what install.sh put there
+```
+
+From a checkout, `scripts/install.sh` builds the release binary first (Rust
+1.95 or newer). For a system-wide install from a checkout, build as yourself
+and then install: `cargo build --release --locked && sudo scripts/install.sh
+--prefix /usr/local --no-build`. Either way Crab Player shows up in the
+launcher and under "Open with" for video and audio files; your default
+applications are not changed.
+
+### Runtime dependencies
+
+The `.deb`, `.rpm` and Arch packages pull these in; the Flatpak and the
+AppImage carry libmpv and FFmpeg themselves. "All codecs" means everything
+the installed FFmpeg decodes.
+
+| | Debian / Ubuntu | Fedora | openSUSE | Arch |
+| --- | --- | --- | --- | --- |
+| libmpv (client API 2, mpv 0.35+) | `libmpv2` | `mpv-libs` | `libmpv2` | `mpv` |
+| FFmpeg | pulled in by `libmpv2`; `libavcodec-extra` for extra codecs | `ffmpeg-free`; `ffmpeg-libs` from RPM Fusion for H.264/HEVC | Packman's `libavcodec` for patented codecs | `ffmpeg` (full build) |
+| OpenGL / EGL (Mesa) | `libgl1`, `libegl1`, `libgl1-mesa-dri` | `mesa-libGL`, `mesa-libEGL`, `mesa-dri-drivers` | `Mesa-libGL1`, `Mesa-libEGL1`, `Mesa-dri` | `libglvnd`, `mesa` |
+| VA-API | `libva2` | `libva` | `libva2` | `libva` |
+| VA-API driver, AMD | `mesa-va-drivers` | `mesa-va-drivers` (`-freeworld` from RPM Fusion for H.264/HEVC) | `Mesa-libva` | `libva-mesa-driver` |
+| VA-API driver, Intel | `intel-media-va-driver` (`-non-free` for encoding) | `intel-media-driver` (RPM Fusion) | `intel-media-driver` | `intel-media-driver` |
+| NVIDIA (NVDEC) | proprietary driver | proprietary driver (RPM Fusion) | proprietary driver | `nvidia-utils` |
+| File dialogs | `xdg-desktop-portal` + `-gtk` or `-kde` | same | same | same |
+
+If libmpv is missing, Crab Player still starts and says which package to
+install, on the terminal and in the window.
 
 ### Build and run from the checkout
 
@@ -107,7 +172,9 @@ cargo build --release
 ./target/release/crab-player /path/to/movie.mkv
 ```
 
-A UI-only build without libmpv, for working on the interface:
+Build dependencies: Rust 1.95+, a C compiler, `pkg-config` and the libmpv
+development files (`libmpv-dev`, `mpv-devel`, or `mpv` on Arch). A UI-only
+build without libmpv, for working on the interface:
 
 ```sh
 cargo build --release --no-default-features
@@ -154,7 +221,7 @@ H.264, HEVC, VP9, and AV1 on RDNA2 and newer), `intel-media-driver` (Intel
 Broadwell and newer), or the NVIDIA driver for NVDEC. Anything the GPU
 cannot decode is decoded in software automatically.
 
-## Keyboard shortcuts
+## Keyboard and mouse
 
 | Key | Action |
 | --- | --- |
@@ -167,7 +234,7 @@ cannot decode is decoded in software automatically.
 | `[` / `]` | Speed down / up |
 | `Backspace` | Reset speed |
 | `PgUp` / `PgDn` | Previous / next item |
-| `F`, `Enter` | Toggle full screen |
+| `F`, `Enter`, middle click | Toggle full screen (double click on the video too) |
 | `Esc` | Leave full screen |
 | `F9` | Toggle playlist |
 | `A` / `J` | Next audio / subtitle track |
@@ -187,6 +254,21 @@ cannot decode is decoded in software automatically.
 | `Ctrl+,` | Options |
 | `Ctrl+P` | Media Info |
 | `Ctrl+Q` | Quit |
+
+Mouse:
+
+| Input | Where | Action |
+| --- | --- | --- |
+| Click | video | Play / pause |
+| Double click | video | Toggle full screen |
+| **Middle click** (wheel button) | video, caption strip, bars, playlist, empty areas | Toggle full screen |
+| Wheel | video, control bar | Volume ±2 % |
+| Right click | video | Context menu |
+| Drag | video (windowed) | Move the window |
+
+A middle click does nothing over a menu or dialog, while a text field is
+being edited (Go To, Open URL) or while the seek bar or volume slider is
+being dragged.
 
 Bindings are defined in `src/command.rs`.
 
@@ -227,9 +309,15 @@ method are in [`docs/performance.md`](docs/performance.md).
   purple shape and the play button is lost.
 - Track selection, delays and picture settings are not remembered per file.
 - No subtitle styling options, equalizer, shaders or thumbnail capture yet.
-- The Arch package has been built but not installed system-wide; the
-  user-level install has been installed and tested. Debian and Flatpak
-  packaging have never been built.
+- Packages were built and install-tested in containers and on one Arch
+  machine; see [`docs/packaging.md`](docs/packaging.md) for exactly what was
+  tested where. Nothing has been published yet (no release, AUR or Flathub
+  entry).
+- In the Flatpak the clipboard is unavailable (the sandbox does not expose
+  Wayland's data-control protocol), so "Copy location" does nothing there.
+- On a system without fontconfig or without any installed fonts, the
+  player uses egui's built-in fonts only, so file names in scripts they do
+  not cover (Persian, CJK, …) show as boxes.
 - Always on top cannot work on native Wayland (no protocol); the pin is
   disabled there.
 - Settings from the project's earlier working name are copied to the new
@@ -254,9 +342,11 @@ src/
 assets/              logo and application icons
 docs/                architecture, UI specification, performance, codecs,
                      screenshots
-packaging/           desktop entry, Arch, Debian, Flatpak
-scripts/             user install/uninstall, end-to-end render check,
-                     codec matrix
+packaging/           desktop entry, AppStream data, AppImage, Debian, RPM,
+                     Arch, Flatpak, tarball, container install test
+scripts/             install/uninstall, end-to-end render check, codec
+                     matrix, middle-click check, libmpv shim generator
+.github/workflows/   CI (every push) and release builds (v* tags)
 ```
 
 ## License

@@ -14,35 +14,51 @@ use std::collections::HashMap;
 const SOURCES: [(u32, &[u8]); 8] = [
     (
         16,
-        include_bytes!("../../assets/icons/hicolor/16x16/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/16x16/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
     (
         24,
-        include_bytes!("../../assets/icons/hicolor/24x24/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/24x24/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
     (
         32,
-        include_bytes!("../../assets/icons/hicolor/32x32/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/32x32/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
     (
         48,
-        include_bytes!("../../assets/icons/hicolor/48x48/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/48x48/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
     (
         64,
-        include_bytes!("../../assets/icons/hicolor/64x64/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/64x64/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
     (
         128,
-        include_bytes!("../../assets/icons/hicolor/128x128/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/128x128/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
     (
         256,
-        include_bytes!("../../assets/icons/hicolor/256x256/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/256x256/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
     (
         512,
-        include_bytes!("../../assets/icons/hicolor/512x512/apps/crab-player.png"),
+        include_bytes!(
+            "../../assets/icons/hicolor/512x512/apps/io.github.mahziyarng98.CrabPlayer.png"
+        ),
     ),
 ];
 

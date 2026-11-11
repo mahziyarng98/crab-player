@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata for software centres (GNOME Software, KDE Discover,
+     Flathub). Installed as /usr/share/metainfo/<id>.metainfo.xml. The id is
+     the application id used everywhere else; see docs/packaging.md. -->
+<component type="desktop-application">
+  <id>io.github.mahziyarng98.CrabPlayer</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>Crab Player</name>
+  <summary>Fast, native media player</summary>
+
+  <developer id="io.github.mahziyarng98">
+    <name>Mahziyar</name>
+  </developer>
+
+  <description>
+    <p>
+      Crab Player is a light media player with a classic desktop layout:
+      caption strip, video canvas, transport bar and a docked playlist.
+    </p>
+    <p>
+      Playback is provided by libmpv, with VA-API and NVDEC hardware
+      decoding, subtitle rendering and network streams. Every format the
+      installed FFmpeg decodes is supported. The interface runs natively on
+      Wayland and X11.
+    </p>
+    <ul>
+      <li>Audio, subtitle and video track selection, external subtitle files</li>
+      <li>Playlist with drag and drop, shuffle, repeat and A-B loop</li>
+      <li>Full screen with auto-hiding controls (F, double click or middle click)</li>
+      <li>Media information, playback statistics and screenshots</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.github.mahziyarng98.CrabPlayer.desktop</launchable>
+  <provides>
+    <binary>crab-player</binary>
+  </provides>
+
+  <url type="homepage">https://github.com/mahziyarng98/crab-player</url>
+  <url type="bugtracker">https://github.com/mahziyarng98/crab-player/issues</url>
+  <url type="vcs-browser">https://github.com/mahziyarng98/crab-player</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Playing a video with the playlist open</caption>
+      <image>https://raw.githubusercontent.com/mahziyarng98/crab-player/main/docs/screenshots/playing.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Full screen with the controls shown</caption>
+      <image>https://raw.githubusercontent.com/mahziyarng98/crab-player/main/docs/screenshots/fullscreen.png</image>
+    </screenshot>
+  </screenshots>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Player</category>
+  </categories>
+  <keywords>
+    <keyword>video</keyword>
+    <keyword>audio</keyword>
+    <keyword>player</keyword>
+    <keyword>media</keyword>
+    <keyword>movie</keyword>
+  </keywords>
+
+  <requires>
+    <display_length compare="ge">640</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.1.0" date="2026-11-11">
+      <description>
+        <p>First release.</p>
+      </description>
+    </release>
+  </releases>
+</component>

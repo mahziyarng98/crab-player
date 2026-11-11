@@ -1,0 +1,64 @@
+# Maintainer: Mahziyar <289230375+mahziyarng98@users.noreply.github.com>
+# Development snapshot from the main branch. For the AUR, publish this file
+# as the PKGBUILD of a `crab-player-git` package.
+pkgname=crab-player-git
+_pkgname=crab-player
+pkgver=0.1.0.r0.g0000000
+pkgrel=1
+pkgdesc="Fast native media player built with Rust, egui and libmpv (development version)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/mahziyarng98/crab-player"
+license=('MIT')
+depends=('mpv' 'ffmpeg' 'gcc-libs' 'glibc' 'libglvnd' 'wayland' 'libxkbcommon'
+         'libx11' 'libxcursor' 'libxi' 'libxrandr' 'hicolor-icon-theme')
+makedepends=('cargo' 'git')
+options=('!debug')
+optdepends=(
+  'xdg-desktop-portal: native file dialogs'
+  'xdg-desktop-portal-gtk: a file chooser for the portal on non-GNOME desktops'
+  'libva-mesa-driver: VA-API hardware decoding on AMD'
+  'intel-media-driver: VA-API hardware decoding on Intel Broadwell and newer'
+  'nvidia-utils: NVDEC hardware decoding on NVIDIA'
+)
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+source=("$_pkgname::git+https://github.com/mahziyarng98/crab-player.git")
+sha256sums=('SKIP')
+
+_app_id=io.github.mahziyarng98.CrabPlayer
+
+pkgver() {
+  cd "$_pkgname"
+  git describe --long --tags --abbrev=7 2>/dev/null | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' ||
+    printf "0.1.0.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+prepare() {
+  cd "$_pkgname"
+  export CARGO_HOME="${CARGO_HOME:-$srcdir/cargo-home}"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$_pkgname"
+  export CARGO_HOME="${CARGO_HOME:-$srcdir/cargo-home}"
+  cargo build --release --frozen
+}
+
+check() {
+  cd "$_pkgname"
+  export CARGO_HOME="${CARGO_HOME:-$srcdir/cargo-home}"
+  cargo test --release --frozen
+}
+
+package() {
+  cd "$_pkgname"
+  install -Dm755 "target/release/$_pkgname" "$pkgdir/usr/bin/$_pkgname"
+  install -Dm644 "packaging/$_app_id.desktop" "$pkgdir/usr/share/applications/$_app_id.desktop"
+  install -Dm644 "packaging/$_app_id.metainfo.xml" "$pkgdir/usr/share/metainfo/$_app_id.metainfo.xml"
+  for size in 16 24 32 48 64 128 256 512; do
+    install -Dm644 "assets/icons/hicolor/${size}x${size}/apps/$_app_id.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/$_app_id.png"
+  done
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$_pkgname/LICENSE"
+}

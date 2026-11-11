@@ -2,6 +2,7 @@ mod app;
 mod command;
 mod config;
 mod dialogs;
+mod fonts;
 mod media;
 mod player;
 mod playlist;
@@ -36,6 +37,12 @@ fn main() -> eframe::Result {
         .try_init();
 
     let cli = Cli::parse();
+    // libmpv is opened at runtime, so a missing library is reported here
+    // (and in the window) instead of by the dynamic loader.
+    #[cfg(feature = "mpv")]
+    if let Err(reason) = player::mpv_dl::load() {
+        eprintln!("{}", player::mpv_dl::missing_help(&reason));
+    }
     // Settings written under the project's earlier working name are carried
     // over once, before anything reads them.
     config::migrate_legacy();
@@ -47,6 +54,13 @@ fn main() -> eframe::Result {
     let icon = eframe::icon_data::from_png_bytes(app::ICON_PNG)
         .inspect_err(|err| tracing::warn!(%err, "could not decode the window icon"))
         .unwrap_or_default();
+
+    let system_fonts = fonts::system_fonts_available();
+    if !system_fonts {
+        tracing::warn!(
+            "no fontconfig configuration or no fonts installed; using built-in fonts only"
+        );
+    }
 
     let native_options = eframe::NativeOptions {
         // glow/OpenGL is deliberate: it is the only backend that lets libmpv
@@ -61,11 +75,17 @@ fn main() -> eframe::Result {
             .with_decorations(false)
             .with_inner_size([1120.0, 700.0])
             .with_min_inner_size(app::MIN_WINDOW_SIZE),
+        // Window state stays in `~/.local/share/crab-player/app.ron`, next
+        // to the other data, instead of a folder named after the app id.
+        persistence_path: eframe::storage_dir(app::APP_SLUG).map(|dir| dir.join("app.ron")),
+        // System fonts cover scripts egui's own fonts lack (file names in
+        // Persian, CJK, …), but enumerating them aborts when fontconfig has
+        // no configuration or no fonts; see `fonts`.
+        system_font_fallback: system_fonts,
         ..Default::default()
     };
 
     eframe::run_native(
-        // eframe derives its storage folder from the app id set above.
         app::APP_NAME,
         native_options,
         Box::new(move |cc| {

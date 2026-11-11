@@ -1,0 +1,175 @@
+name: Release
+
+# Pushing a version tag (v0.1.0, …) builds every package and publishes them,
+# with SHA-256 sums, as a GitHub release for that tag.
+#
+# The AppImage job calls packaging/appimage/build.sh, which pins
+# appimagetool 1.9.1 and the type2 runtime 20251108 to their release URLs
+# and verifies both SHA-256 checksums before using them.
+on:
+  push:
+    tags: ["v*"]
+  # Manual run: builds every package as downloadable artifacts and publishes
+  # nothing unless run on a v* tag with "publish" checked. Use this to test
+  # a release without creating a tag.
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a release (needs a v* tag ref)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  appimage:
+    name: AppImage and tarball (Ubuntu 22.04, glibc 2.35)
+    runs-on: ubuntu-24.04
+    container: ubuntu:22.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Point apt at a reachable mirror
+        # archive.ubuntu.com and security.ubuntu.com do not resolve from these
+        # runners (see the comment in .github/workflows/ci.yml); the mirror
+        # only changes where packages are downloaded from.
+        run: |
+          sed -i \
+            -e 's|archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            /etc/apt/sources.list
+      - name: Build
+        env:
+          CRAB_SRC: ${{ github.workspace }}
+          CRAB_DIST: ${{ github.workspace }}/dist
+          CRAB_CACHE: /tmp/cache
+        run: bash packaging/appimage/build.sh --inside
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: appimage
+          path: dist/*
+          if-no-files-found: error
+
+  deb:
+    name: .deb (Debian 12)
+    runs-on: ubuntu-24.04
+    container: debian:bookworm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build
+        env:
+          CRAB_SRC: ${{ github.workspace }}
+          CRAB_DIST: ${{ github.workspace }}/dist
+        run: bash packaging/debian/build.sh --inside
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: deb
+          path: dist/*
+          if-no-files-found: error
+
+  rpm:
+    name: .rpm (Fedora 45)
+    runs-on: ubuntu-24.04
+    container: fedora:45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build
+        env:
+          CRAB_SRC: ${{ github.workspace }}
+          CRAB_DIST: ${{ github.workspace }}/dist
+        run: bash packaging/rpm/build.sh --inside
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rpm
+          path: dist/*
+          if-no-files-found: error
+
+  arch:
+    name: Arch package
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm --needed git rust mpv
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build (makepkg refuses to run as root)
+        run: |
+          useradd -m builder
+          chown -R builder "$GITHUB_WORKSPACE"
+          su builder -c "cd '$GITHUB_WORKSPACE' && packaging/arch/build-local.sh '$GITHUB_WORKSPACE/dist'"
+          rm -f dist/PKGBUILD dist/*.tar.gz
+          (cd dist && sha256sum ./*.pkg.tar.zst > "$(ls ./*.pkg.tar.zst | head -1).sha256")
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arch
+          path: dist/*.pkg.tar.zst*
+          if-no-files-found: error
+
+  flatpak:
+    name: Flatpak bundle
+    runs-on: ubuntu-24.04
+    # Best effort: a Flatpak problem does not hold back the other packages.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install flatpak-builder
+        run: |
+          # See the apt comment in .github/workflows/ci.yml.
+          sudo sed -i \
+            -e 's|azure\.archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            /etc/apt/apt-mirrors.txt || true
+          sudo timeout 180 apt-get update -qq \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
+            -o Acquire::https::Timeout=20
+          sudo timeout 300 apt-get install -y -qq --no-install-recommends \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
+            flatpak flatpak-builder
+          # bubblewrap needs unprivileged user namespaces, which Ubuntu
+          # 24.04 restricts through AppArmor.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Build
+        run: packaging/flatpak/build.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: flatpak
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish the release
+    needs: [appimage, deb, rpm, arch, flatpak]
+    # Runs when the required packages built, even if the Flatpak did not;
+    # a manual run only publishes when asked for and run on a v* tag.
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish) && needs.appimage.result == 'success' && needs.deb.result == 'success' && needs.rpm.result == 'success' && needs.arch.result == 'success' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd dist
+          rm -f ./*.sha256
+          sha256sum ./* | sed 's| \./| |' > SHA256SUMS
+          cat SHA256SUMS
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # A checked-in notes file wins; otherwise let GitHub generate the
+          # notes from the commits.
+          notes=(--generate-notes)
+          if [ -f "docs/release-notes/$TAG.md" ]; then
+            notes=(--notes-file "docs/release-notes/$TAG.md")
+          fi
+          gh release create "$TAG" dist/* --title "Crab Player ${TAG#v}" \
+            "${notes[@]}" --verify-tag

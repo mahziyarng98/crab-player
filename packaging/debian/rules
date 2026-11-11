@@ -1,8 +1,11 @@
 #!/usr/bin/make -f
-# Build with cargo directly; dh-cargo is not required, which keeps the
-# dependency set small on stable releases.
-#
-# UNTESTED: this packaging has not been built on a Debian system yet.
+# Build with cargo directly (Rust 1.95+ from rustup); dh-cargo is not used,
+# which keeps the package buildable on stable releases.
+# packaging/debian/build.sh runs this in a Debian 12 container.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+APP_ID = io.github.mahziyarng98.CrabPlayer
+DEST = debian/crab-player
 
 %:
 	dh $@
@@ -14,20 +17,27 @@ override_dh_auto_build:
 	cargo build --release --locked
 
 override_dh_auto_test:
-	# The UI has no headless test harness yet; unit tests only.
-	cargo test --release --locked --no-default-features
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	cargo test --release --locked
+endif
 
 override_dh_auto_install:
-	install -Dm755 target/release/crab-player \
-		debian/crab-player/usr/bin/crab-player
-	install -Dm644 packaging/crab-player.desktop \
-		debian/crab-player/usr/share/applications/crab-player.desktop
+	install -Dm755 target/release/crab-player $(DEST)/usr/bin/crab-player
+	install -Dm644 packaging/$(APP_ID).desktop \
+		$(DEST)/usr/share/applications/$(APP_ID).desktop
+	install -Dm644 packaging/$(APP_ID).metainfo.xml \
+		$(DEST)/usr/share/metainfo/$(APP_ID).metainfo.xml
 	for size in 16 24 32 48 64 128 256 512; do \
-		install -Dm644 assets/icons/hicolor/$${size}x$${size}/apps/crab-player.png \
-			debian/crab-player/usr/share/icons/hicolor/$${size}x$${size}/apps/crab-player.png; \
+		install -Dm644 assets/icons/hicolor/$${size}x$${size}/apps/$(APP_ID).png \
+			$(DEST)/usr/share/icons/hicolor/$${size}x$${size}/apps/$(APP_ID).png; \
 	done
-	install -Dm644 README.md \
-		debian/crab-player/usr/share/doc/crab-player/README.md
+	install -Dm644 README.md $(DEST)/usr/share/doc/crab-player/README.md
+
+override_dh_dwz:
+	# The release profile strips the binary; there is no debug info.
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
 
 override_dh_auto_clean:
-	cargo clean || true
+	cargo clean 2>/dev/null || true

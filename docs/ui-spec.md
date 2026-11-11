@@ -50,8 +50,9 @@ Screenshots: `docs/screenshots/`.
   (`ViewportCommand::BeginResize`), except where the seek bar reaches the
   edge.
 - View ▸ "Caption & Menu" (`Ctrl+M`) hides and shows the strip.
-- App id `crab-player` (Wayland `app_id` and X11 class), matching
-  `crab-player.desktop`; the window title is "Crab Player".
+- App id `io.github.mahziyarng98.CrabPlayer` (Wayland `app_id` and X11 class), matching
+  `io.github.mahziyarng98.CrabPlayer.desktop` and its `StartupWMClass`; the window title is
+  "Crab Player". The binary, config and data folders stay `crab-player`.
 - Minimum size 640×400; default 1120×700.
 - Full screen is a viewport command, so the compositor handles workspace
   and focus correctly.
@@ -109,6 +110,7 @@ Menu behaviour rules:
 - Media is letterboxed, never stretched, unless the user picks a Video Frame
   mode (Phase 3).
 - **Single click**: play/pause. **Double click**: toggle full screen.
+  **Middle click** (wheel button): toggle full screen.
   **Wheel**: volume ±2 % per notch (matches common player behaviour).
 - **Right click**: the context menu: Open File, Open ▸, Play ▸, View ▸, Video ▸,
   Audio ▸, Subtitles ▸, the three track lists, Navigate ▸, Capture ▸,
@@ -202,7 +204,7 @@ Layout, computed from the bar width alone (`plan`, unit-tested):
 | Shuffle | Random playback order. |
 | Subtitles | Hides the shown subtitles, or shows the next track; disabled without tracks. |
 | Playlist | Toggles the right panel (also F9). |
-| Full screen | Toggles full screen (also F/Enter, double click; Esc leaves). |
+| Full screen | Toggles full screen (also F/Enter, double click, middle click; Esc leaves). |
 
 Full screen: the caption and the bars are drawn over the video on a 90 %
 opaque plate and fade (200 ms). They hide after `autohide_ms` (default
@@ -324,7 +326,7 @@ editor can rebind without touching call sites.
 | Mute | M |
 | Speed − / + | [ / ] |
 | Speed reset | Backspace |
-| Full screen | F, Enter |
+| Full screen | F, Enter, middle click |
 | Leave full screen | Esc |
 | Playlist | F9 |
 | Caption & Menu / Seek Bar / Controls | Ctrl+M (also Ctrl+0) / Ctrl+1 / Ctrl+2 |
@@ -357,6 +359,7 @@ aspect ratio, chapter skip.
 | --- | --- | --- |
 | Left click | video | Play/pause |
 | Double click | video | Full screen |
+| Middle click | video, caption strip, bars, playlist, empty areas | Toggle full screen |
 | Right click | video | Context menu (§4) |
 | Wheel | video | Volume ±2 per notch |
 | Wheel | control bar | Volume ±2 |
@@ -365,6 +368,18 @@ aspect ratio, chapter skip.
 | Drag | panel edge | Resize playlist |
 | Touch tap | video | Play/pause (single), full screen (double) |
 | Drag down | video | Dismiss (Phase 3, touch only) |
+
+Middle click runs the same `Command::Fullscreen` as F, Enter and a double
+click, so auto-hide and every other full-screen behaviour are shared. It is
+ignored while a menu or popup is open (that click only closes it), over a
+dialog, while a text field has focus or Go To / Open URL is open, and while
+the left or right button is held (seek bar, volume slider, panel edge or
+window drag). The rule is the pure function
+`command::middle_click_toggles_fullscreen`, unit tested; it is evaluated
+before the frame is drawn, against the menu, focus and drag state the click
+landed on. A double click is a left-button gesture and toggles once; the
+middle button never takes part in it. `scripts/middle-click-check.sh` drives
+all of this with synthetic input under Xvfb.
 
 ## 14. States
 

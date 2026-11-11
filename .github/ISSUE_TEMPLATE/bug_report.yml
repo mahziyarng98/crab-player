@@ -1,0 +1,66 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Crab Player version
+      description: Output of `crab-player --version`.
+      placeholder: crab-player 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Install format
+      options:
+        - AppImage
+        - .deb
+        - .rpm
+        - Arch package / AUR
+        - Flatpak
+        - Tarball + install.sh
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution and version
+      placeholder: Fedora 45, Ubuntu 24.04, Arch, …
+    validations:
+      required: true
+  - type: input
+    id: desktop
+    attributes:
+      label: Desktop or compositor, Wayland or X11
+      placeholder: GNOME 49 on Wayland, KDE Plasma 6 on X11, Hyprland, …
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and driver
+      placeholder: AMD Radeon 680M (Mesa 26.2), Intel UHD 620 (iHD), NVIDIA RTX 3060 (580.xx), …
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        Run `RUST_LOG=crab_player=debug crab-player /path/to/file 2>&1 | tee crab-player.log`,
+        reproduce the problem, quit, and paste the log here. Remove anything private
+        (file names, paths) first.
+      render: text
+  - type: textarea
+    id: media
+    attributes:
+      label: Media details (if playback related)
+      description: Container, video and audio codec, from File ▸ Media Info or `ffprobe`.

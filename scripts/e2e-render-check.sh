@@ -97,7 +97,10 @@ centre_colour() {
 }
 # near <actual> <expected>: every channel within 40 of the expected value.
 near() {
-    local a=($1) e=($2) i d
+    local -a a e
+    local i d
+    read -r -a a <<<"$1"
+    read -r -a e <<<"$2"
     for i in 0 1 2; do
         d=$((a[i] - e[i])); [ $d -lt 0 ] && d=$((-d))
         [ $d -le 40 ] || return 1

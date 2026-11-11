@@ -26,3 +26,17 @@ packaging/flatpak/cargo-sources.json
 /*.jpg
 /*.jpeg
 /*.webp
+
+# Release artifacts and their staging areas
+/dist/
+*.AppImage
+*.deb
+*.rpm
+*.flatpak
+*.tar.gz
+*.sha256
+packaging/appimage/AppDir/
+packaging/appimage/tools/
+packaging/flatpak/repo/
+packaging/flatpak/.flatpak-builder/
+packaging/flatpak/build-dir/
