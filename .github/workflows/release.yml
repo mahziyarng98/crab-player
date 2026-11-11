@@ -32,6 +32,15 @@ jobs:
     container: ubuntu:22.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Point apt at a reachable mirror
+        # archive.ubuntu.com and security.ubuntu.com do not resolve from these
+        # runners (see the comment in .github/workflows/ci.yml); the mirror
+        # only changes where packages are downloaded from.
+        run: |
+          sed -i \
+            -e 's|archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            /etc/apt/sources.list
       - name: Build
         env:
           CRAB_SRC: ${{ github.workspace }}
@@ -109,7 +118,9 @@ jobs:
       - name: Install flatpak-builder
         run: |
           # See the apt comment in .github/workflows/ci.yml.
-          sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
+          sudo sed -i \
+            -e 's|azure\.archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
             /etc/apt/apt-mirrors.txt || true
           sudo timeout 180 apt-get update -qq \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \

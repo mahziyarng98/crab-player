@@ -33,16 +33,17 @@ jobs:
       - name: Install build dependencies
         run: |
           set -euo pipefail
-          # The ubuntu-24.04 image sends apt to azure.archive.ubuntu.com,
-          # which does not resolve from every runner pool: each lookup hung
-          # ~26 s and apt tried it four times per repository, so the job sat
-          # here for twelve minutes and then failed. Point apt at the
-          # canonical archive first and bound every call, so a network
-          # problem fails fast (and visibly) instead of hanging.
-          sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
+          # The ubuntu-24.04 image sends apt to azure.archive.ubuntu.com, and
+          # from these runners neither that host nor archive.ubuntu.com
+          # resolves: every lookup hung ~26 s, apt repeated it once per
+          # repository, and the job sat here for twelve minutes before it
+          # even failed. Use a mirror that does resolve here (checked with
+          # curl before this job) and bound every call, so a network
+          # problem fails in minutes instead of hanging.
+          sudo sed -i \
+            -e 's|azure\.archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
             /etc/apt/apt-mirrors.txt || true
-          getent hosts archive.ubuntu.com >/dev/null ||
-            echo "::warning::archive.ubuntu.com does not resolve either"
           sudo timeout 180 apt-get update -qq \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
             -o Acquire::https::Timeout=20
@@ -73,26 +74,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Network diagnostics
-        run: |
-          for h in archive.ubuntu.com deb.debian.org mirrors.edge.kernel.org; do
-            printf '%-26s v4: ' "$h"
-            timeout 5 getent ahostsv4 "$h" | head -1 || echo "(none)"
-          done
-          for u in https://deb.debian.org/debian/ \
-                   https://static.rust-lang.org/ \
-                   https://static.crates.io/ \
-                   https://mirrors.edge.kernel.org/ubuntu/ \
-                   https://ftp.osuosl.org/pub/ubuntu/ \
-                   https://mirror.math.princeton.edu/pub/ubuntu/ \
-                   https://registry-1.docker.io/v2/ ; do
-            curl -sS -m 15 -o /dev/null -w "%{http_code} $u\n" "$u" || true
-          done
       - name: Install validators
         run: |
           set -euo pipefail
           # See the apt comment in the check job above.
-          sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
+          sudo sed -i \
+            -e 's|azure\.archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
+            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
             /etc/apt/apt-mirrors.txt || true
           sudo timeout 180 apt-get update -qq \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
