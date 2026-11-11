@@ -85,10 +85,13 @@ for _ in $(seq 60); do
   grep -q "first video frame" /tmp/player.log && break
   sleep 0.5
 done
-pid="$(pgrep -f "usr/bin/crab-player|^crab-player" | head -1 || true)"
+pid=""
+for proc in /proc/[0-9]*; do
+  [ "$(cat "$proc/comm" 2>/dev/null)" = crab-player ] && pid="${proc#/proc/}"
+done
 if [ -n "$pid" ]; then
   echo "== libraries mapped by the player (libmpv, FFmpeg, GL, VA):"
-  grep -oE "/[^ ]*(libmpv|libavcodec|libGLX_mesa|libEGL_mesa|libEGL\.so|libGL\.so|libva\.so|swrast|llvmpipe)[^ ]*" /proc/$pid/maps | sort -u | sed "s/^/   /" || true
+  awk "{print \$6}" /proc/$pid/maps | grep -E "(libmpv|libavcodec|libGLX_mesa|libEGL_mesa|libEGL\.so|libGL\.so|libva\.so|libasound|libgallium|swrast)" | sort -u | sed "s/^/   /" || true
 fi
 sed "s/\x1b\[[0-9;]*m//g" /tmp/player.log | grep -E "backend ready|GL renderer|software OpenGL|first video frame|ERROR|libmpv" | cut -c28-200 || true
 if grep -q "first video frame" /tmp/player.log; then

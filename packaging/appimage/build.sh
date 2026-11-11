@@ -13,12 +13,14 @@
 #
 # What is bundled: libmpv (built here, client API 2) and its media stack:
 # FFmpeg 4.4 from Ubuntu 22.04 with its codec libraries, libass, libpulse.
-# What is NOT bundled, so the host's drivers keep working: glibc, libstdc++,
-# libGL/libEGL/libGLX/libgbm/libdrm/libvulkan, the X11 core and Wayland
-# client libraries, libxkbcommon, D-Bus, fontconfig/freetype/harfbuzz.
-# libva, libvdpau and libasound are shipped as per-library fallbacks that
-# AppRun uses only when the host lacks that library, so VA-API normally
-# runs on the host's libva and drivers and ALSA on the host's plugins.
+# Never bundled, so the host's drivers keep working: glibc, libstdc++ and
+# the GPU stack (libGL/libEGL/libGLX/libgbm/libdrm/libvulkan).
+# Shipped only as per-library fallbacks, which AppRun uses just for the
+# libraries the host lacks: libva, libvdpau, ALSA, D-Bus, udev,
+# fontconfig, freetype, harfbuzz, expat, zlib, libuuid and the X11/xcb/
+# Wayland/xkbcommon client libraries. On a normal desktop all of these come
+# from the host, so VA-API runs on the host's libva and drivers, ALSA on
+# its plugins and fonts on its configuration.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -178,12 +180,14 @@ cp -L "$mpv_prefix/lib/libmpv.so.2" "$lib/"
 # else is bundled, including libraries whose soname or presence differs
 # between distributions (libpcre.so.3 and libselinux are missing on Arch,
 # for example).
-host_only='^(ld-linux.*|libc|libm|libdl|libpthread|librt|libresolv|libutil|libanl|libnsl|libBrokenLocale|libmvec|libstdc\+\+|libgcc_s|libGL|libGLX|libGLdispatch|libOpenGL|libEGL|libGLESv1_CM|libGLESv2|libgbm|libdrm.*|libvulkan|libX11|libX11-xcb|libxcb.*|libXau|libXdmcp|libwayland-.*|libxkbcommon.*|libdbus-1|libsystemd|libudev|libfontconfig|libfreetype|libharfbuzz|libexpat|libz|libuuid)\.so'
+host_only='^(ld-linux.*|libc|libm|libdl|libpthread|librt|libresolv|libutil|libanl|libnsl|libBrokenLocale|libmvec|libstdc\+\+|libgcc_s|libGL|libGLX|libGLdispatch|libOpenGL|libEGL|libGLESv1_CM|libGLESv2|libgbm|libdrm.*|libvulkan|libsystemd)\.so'
 # Used from the host when present, from the bundle otherwise: libva must
-# match the host's VA drivers and libasound the host's ALSA plugins, but a
-# minimal system may have neither. Each one gets its own directory, so
-# AppRun can add exactly the ones the host lacks.
-fallback_only='^(libva|libva-drm|libva-x11|libva-wayland|libvdpau|libasound)\.so'
+# match the host's VA drivers, libasound the host's ALSA plugins, the X11
+# and Wayland client libraries the host's Mesa, and fontconfig/freetype/
+# harfbuzz/D-Bus the host's configuration, but a minimal system may lack
+# any of them. Each one gets its own directory, so
+# AppRun adds exactly the ones the host does not have.
+fallback_only='^(libva|libva-drm|libva-x11|libva-wayland|libvdpau|libasound|libdbus-1|libudev|libfontconfig|libfreetype|libharfbuzz|libexpat|libz|libuuid|libX11|libX11-xcb|libxcb.*|libXau|libXdmcp|libwayland-.*|libxkbcommon.*)\.so'
 
 copy_deps() { # <elf>: copy the bundleable libraries it needs, recursively
     ldd "$1" | awk '/=> \//{print $1" "$3}' | while read -r name path; do

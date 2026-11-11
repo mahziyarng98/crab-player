@@ -2,6 +2,7 @@ mod app;
 mod command;
 mod config;
 mod dialogs;
+mod fonts;
 mod media;
 mod player;
 mod playlist;
@@ -54,6 +55,13 @@ fn main() -> eframe::Result {
         .inspect_err(|err| tracing::warn!(%err, "could not decode the window icon"))
         .unwrap_or_default();
 
+    let system_fonts = fonts::system_fonts_available();
+    if !system_fonts {
+        tracing::warn!(
+            "no fontconfig configuration or no fonts installed; using built-in fonts only"
+        );
+    }
+
     let native_options = eframe::NativeOptions {
         // glow/OpenGL is deliberate: it is the only backend that lets libmpv
         // render into an FBO owned by the egui painter on X11 *and* Wayland.
@@ -70,6 +78,10 @@ fn main() -> eframe::Result {
         // Window state stays in `~/.local/share/crab-player/app.ron`, next
         // to the other data, instead of a folder named after the app id.
         persistence_path: eframe::storage_dir(app::APP_SLUG).map(|dir| dir.join("app.ron")),
+        // System fonts cover scripts egui's own fonts lack (file names in
+        // Persian, CJK, …), but enumerating them aborts when fontconfig has
+        // no configuration or no fonts; see `fonts`.
+        system_font_fallback: system_fonts,
         ..Default::default()
     };
 
