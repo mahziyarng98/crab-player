@@ -32,8 +32,28 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends libmpv-dev pkg-config
+          set -euo pipefail
+          # The ubuntu-24.04 image resolves apt through
+          # azure.archive.ubuntu.com, which intermittently fails to resolve on
+          # hosted runners ("Temporary failure resolving …"). Retry with
+          # bounded timeouts and fall back to the canonical Ubuntu mirror, so
+          # a mirror problem fails the job instead of hanging it.
+          apt() {
+            sudo apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 \
+              -o Acquire::https::Timeout=30 "$@"
+          }
+          for attempt in 1 2 3; do
+            if apt update -qq && apt install -y -qq --no-install-recommends \
+                libmpv-dev pkg-config; then
+              exit 0
+            fi
+            echo "::warning::apt attempt ${attempt} failed; retrying with archive.ubuntu.com"
+            sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
+              /etc/apt/apt-mirrors.txt || true
+            sleep 10
+          done
+          echo "::error::could not install the build dependencies"
+          exit 1
       - name: Install Rust ${{ env.RUST_VERSION }}
         run: |
           rustup toolchain install "$RUST_VERSION" --profile minimal -c rustfmt,clippy
@@ -60,8 +80,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install validators
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends appstream desktop-file-utils shellcheck
+          set -euo pipefail
+          # See the apt comment in the check job above.
+          apt() {
+            sudo apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 \
+              -o Acquire::https::Timeout=30 "$@"
+          }
+          for attempt in 1 2 3; do
+            if apt update -qq && apt install -y -qq --no-install-recommends \
+                appstream desktop-file-utils shellcheck; then
+              exit 0
+            fi
+            echo "::warning::apt attempt ${attempt} failed; retrying with archive.ubuntu.com"
+            sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' \
+              /etc/apt/apt-mirrors.txt || true
+            sleep 10
+          done
+          echo "::error::could not install the validators"
+          exit 1
       - name: Validate
         run: |
           desktop-file-validate packaging/io.github.mahziyarng98.CrabPlayer.desktop
