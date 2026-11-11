@@ -39,6 +39,10 @@ finish-args:
   - --filesystem=xdg-pictures/crab-player:create
 
 build-options:
+  # Some builder versions default to lib64 here; everything in the bundle,
+  # including the app's LIBRARY_PATH, expects /app/lib. The value must be
+  # absolute: flatpak-builder passes it straight to --libdir.
+  libdir: /app/lib
   append-path: /usr/lib/sdk/rust-stable/bin
 
 cleanup:
