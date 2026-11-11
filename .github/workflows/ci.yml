@@ -30,26 +30,9 @@ jobs:
             features: --no-default-features
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install build dependencies
-        run: |
-          set -euo pipefail
-          # The ubuntu-24.04 image sends apt to azure.archive.ubuntu.com, and
-          # from these runners neither that host nor archive.ubuntu.com
-          # resolves: every lookup hung ~26 s, apt repeated it once per
-          # repository, and the job sat here for twelve minutes before it
-          # even failed. Use a mirror that does resolve here (checked with
-          # curl before this job) and bound every call, so a network
-          # problem fails in minutes instead of hanging.
-          sudo sed -i \
-            -e 's|azure\.archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
-            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
-            /etc/apt/apt-mirrors.txt || true
-          sudo timeout 180 apt-get update -qq \
-            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
-            -o Acquire::https::Timeout=20
-          sudo timeout 300 apt-get install -y -qq --no-install-recommends \
-            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
-            libmpv-dev pkg-config
+      - uses: ./.github/actions/apt-install
+        with:
+          packages: libmpv-dev pkg-config
       - name: Install Rust ${{ env.RUST_VERSION }}
         run: |
           rustup toolchain install "$RUST_VERSION" --profile minimal -c rustfmt,clippy
@@ -74,20 +57,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install validators
-        run: |
-          set -euo pipefail
-          # See the apt comment in the check job above.
-          sudo sed -i \
-            -e 's|azure\.archive\.ubuntu\.com|mirrors.edge.kernel.org|g' \
-            -e 's|security\.ubuntu\.com|mirrors.edge.kernel.org|g' \
-            /etc/apt/apt-mirrors.txt || true
-          sudo timeout 180 apt-get update -qq \
-            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
-            -o Acquire::https::Timeout=20
-          sudo timeout 300 apt-get install -y -qq --no-install-recommends \
-            -o Acquire::Retries=2 -o Acquire::http::Timeout=20 \
-            appstream desktop-file-utils shellcheck
+      - uses: ./.github/actions/apt-install
+        with:
+          packages: appstream desktop-file-utils shellcheck
       - name: Validate
         run: |
           desktop-file-validate packaging/io.github.mahziyarng98.CrabPlayer.desktop
