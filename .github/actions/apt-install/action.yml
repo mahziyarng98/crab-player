@@ -1,0 +1,45 @@
+name: Install Ubuntu packages
+description: >
+  apt-get install from a mirror that resolves on these runners. The
+  ubuntu-24.04 image points apt at azure.archive.ubuntu.com, and neither
+  that host nor archive.ubuntu.com resolves here (verified with getent and
+  curl); a lookup hung about 26 s and apt retried it once per repository,
+  so a plain apt-get update took twelve minutes and then failed. Each
+  mirror is tried with a bounded timeout, and a mirror that stalls is
+  skipped instead of hanging the job.
+inputs:
+  packages:
+    description: Package names, space separated
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        set -euo pipefail
+        opts=(-o Acquire::Retries=1
+              -o Acquire::http::Timeout=15
+              -o Acquire::https::Timeout=15)
+        for base in \
+            http://mirrors.edge.kernel.org/ubuntu/ \
+            http://ftp.osuosl.org/pub/ubuntu/ \
+            http://mirror.math.princeton.edu/pub/ubuntu/; do
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            printf '%s\n%s\n' "$base" "$base" |
+              sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          echo "::group::apt from $base"
+          # shellcheck disable=SC2086 # PACKAGES is a list on purpose
+          if sudo timeout 120 apt-get update -qq "${opts[@]}" &&
+             sudo timeout 240 apt-get install -y -qq --no-install-recommends \
+               "${opts[@]}" $PACKAGES; then
+            echo "::endgroup::"
+            exit 0
+          fi
+          echo "::endgroup::"
+          echo "::warning::$base failed or timed out; trying the next mirror"
+        done
+        echo "::error::could not install: $PACKAGES"
+        exit 1
