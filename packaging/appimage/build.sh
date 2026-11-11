@@ -28,7 +28,12 @@ image="ubuntu:22.04"
 mpv_version="0.36.0"
 mpv_sha256="29abc44f8ebee013bb2f9fe14d80b30db19b534c679056e4851ceadf5a5e8bf6"
 rust_version="1.95.0"
-appimagetool_url="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+# appimagetool and the AppImage runtime it embeds, both pinned to releases
+# and checked by sha256 (never the moving "continuous" builds).
+appimagetool_version="1.9.1"
+appimagetool_sha256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+runtime_version="20251108"
+runtime_sha256="2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d"
 
 if [ "${1:-}" != "--inside" ]; then
     engine="$(command -v docker || command -v podman || true)"
@@ -241,11 +246,24 @@ echo "== bundled libraries"
 ls "$lib" "$fallback"/* | sed 's/^/  /'
 
 echo "== AppImage"
-tool="$cache/appimagetool-x86_64.AppImage"
-[ -x "$tool" ] || { curl -sSfL --retry 5 --retry-all-errors -o "$tool" "$appimagetool_url" && chmod 755 "$tool"; }
+fetch_pinned() { # <url> <sha256> <dest>
+    if [ ! -f "$3" ] || ! echo "$2  $3" | sha256sum -c --quiet - 2>/dev/null; then
+        curl -sSfL --retry 5 --retry-all-errors -o "$3.part" "$1"
+        echo "$2  $3.part" | sha256sum -c --quiet - || { echo "checksum mismatch for $1" >&2; exit 1; }
+        mv "$3.part" "$3"
+    fi
+}
+tool="$cache/appimagetool-$appimagetool_version-x86_64.AppImage"
+runtime="$cache/runtime-$runtime_version-x86_64"
+fetch_pinned "https://github.com/AppImage/appimagetool/releases/download/$appimagetool_version/appimagetool-x86_64.AppImage" \
+    "$appimagetool_sha256" "$tool"
+fetch_pinned "https://github.com/AppImage/type2-runtime/releases/download/$runtime_version/runtime-x86_64" \
+    "$runtime_sha256" "$runtime"
+chmod 755 "$tool"
 out="$dist/Crab_Player-$version-x86_64.AppImage"
 # No FUSE in a container: the tool runs from its extracted copy.
-APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$tool" --no-appstream "$appdir" "$out" >/dev/null
+APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$tool" --no-appstream --runtime-file "$runtime" \
+    "$appdir" "$out" >/dev/null
 (cd "$dist" && sha256sum "$(basename "$out")" >"$(basename "$out").sha256")
 
 echo "== tarball"

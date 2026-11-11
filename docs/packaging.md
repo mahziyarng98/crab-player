@@ -86,6 +86,8 @@ and the generic tarball.
 - Libraries find each other through `RUNPATH=$ORIGIN`, not
   `LD_LIBRARY_PATH`, so programs the player starts (a browser for a link)
   do not inherit the bundle.
+- Packed with appimagetool 1.9.1 and the type2 runtime 20251108, both
+  pinned and checked by sha256.
 - Uses the static AppImage runtime (no libfuse2 needed). Without FUSE (in
   a container) run it with `--appimage-extract-and-run`.
 
@@ -228,5 +230,3 @@ Not tested here:
 - A real system-wide install (`sudo`), installing the Arch package with
   pacman, the AUR, Flathub, aarch64 builds, NVIDIA hardware decoding, and
   RHEL-compatible distributions.
-- The AppImage download step uses appimagetool's `continuous` build (and
-  the runtime it fetches); pin a numbered release when one exists.
