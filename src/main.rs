@@ -36,6 +36,12 @@ fn main() -> eframe::Result {
         .try_init();
 
     let cli = Cli::parse();
+    // libmpv is opened at runtime, so a missing library is reported here
+    // (and in the window) instead of by the dynamic loader.
+    #[cfg(feature = "mpv")]
+    if let Err(reason) = player::mpv_dl::load() {
+        eprintln!("{}", player::mpv_dl::missing_help(&reason));
+    }
     // Settings written under the project's earlier working name are carried
     // over once, before anything reads them.
     config::migrate_legacy();

@@ -11,6 +11,10 @@ pub mod null;
 
 #[cfg(feature = "mpv")]
 pub mod mpv;
+#[cfg(feature = "mpv")]
+pub mod mpv_dl;
+#[cfg(feature = "mpv")]
+mod mpv_shim;
 
 use std::ffi::{CStr, c_void};
 use std::path::PathBuf;
@@ -471,6 +475,12 @@ pub fn create(
     let _ = (config, &video);
 
     #[cfg(feature = "mpv")]
+    if let Err(reason) = mpv_dl::status() {
+        tracing::error!(%reason, "libmpv could not be loaded; using the null backend");
+        return (Box::new(null::NullPlayer::new()), None);
+    }
+
+    #[cfg(feature = "mpv")]
     match mpv::MpvPlayer::new(config, video.repaint.clone()) {
         Ok(mut player) => {
             crate::startup::mark("mpv core created");
@@ -492,6 +502,16 @@ pub fn create(
     }
 
     (Box::new(null::NullPlayer::new()), None)
+}
+
+/// Why the real playback engine is not available, for the error banner;
+/// `None` when it is (or in UI-only builds, which never have it).
+pub fn engine_unavailable() -> Option<String> {
+    #[cfg(feature = "mpv")]
+    if let Err(reason) = mpv_dl::status() {
+        return Some(reason);
+    }
+    None
 }
 
 pub fn format_time(duration: Duration) -> String {
