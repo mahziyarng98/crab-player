@@ -3,7 +3,7 @@
 # as the PKGBUILD of a `crab-player-git` package.
 pkgname=crab-player-git
 _pkgname=crab-player
-pkgver=0.1.1.r0.g0000000
+pkgver=0.1.2.r0.g0000000
 pkgrel=1
 pkgdesc="Fast native media player built with Rust, egui and libmpv (development version)"
 arch=('x86_64' 'aarch64')
@@ -30,7 +30,7 @@ _app_id=io.github.mahziyarng98.crab-player
 pkgver() {
   cd "$_pkgname"
   git describe --long --tags --abbrev=7 2>/dev/null | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' ||
-    printf "0.1.1.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+    printf "0.1.2.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 }
 
 prepare() {

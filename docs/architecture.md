@@ -469,4 +469,5 @@ Formats, build scripts and test results are in
 | 6 (done) | Opening fixed on every path (non-blocking dialogs, Wayland drops, URI decoding), error banners, software retry, Media Info, codec matrix, caption strip with logo, centred transport, user-level installer. |
 | 7 (done) | Release 0.1.0: one reverse-DNS app id, AppStream data, middle-click full screen, libmpv loaded at runtime, AppImage, .deb, .rpm, Arch, Flatpak and tarball packaging, CI and release workflows. |
 | 7.1 (done) | Release 0.1.1: app id matching the repository URL, save dialog for images, narrower Flatpak sandbox, Flathub manifest prepared. |
+| 7.2 (done) | Release 0.1.2: hand-drawn 16×16 and 24×24 px icons. |
 | 8 | Accessibility pass, translations, Flathub submission and AUR. |

@@ -19,7 +19,7 @@ contains instructions instead of a link to an open PR.
 From `packaging/flatpak/`:
 
 - `io.github.mahziyarng98.crab-player.yml` — the manifest. Its crab-player
-  module is a git source at the `v0.1.1` tag and that tag's commit; update
+  module is a git source at the `v0.1.2` tag and that tag's commit; update
   both (and `cargo-sources.json`) for later releases.
 - `cargo-sources.json` — every crate in that tag's `Cargo.lock`, generated
   with
