@@ -26,8 +26,8 @@ optdepends=(
   'nvidia-utils: NVDEC hardware decoding on NVIDIA'
 )
 source=("$pkgname-$pkgver.tar.gz::https://github.com/mahziyarng98/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
-# Replace with the release tarball's checksum (updpkgsums) before publishing.
-sha256sums=('SKIP')
+# sha256 of the GitHub tag archive (updpkgsums regenerates it).
+sha256sums=('0df0deca20c7f19aca94b065fd8ec931d74a3cc4f811e6b6c9a127f620f4c3c5')
 
 _app_id=io.github.mahziyarng98.crab-player
 
