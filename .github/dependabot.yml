@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Rust crates. Weekly, at most 2 open PRs so the dashboard never floods.
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+
+  # GitHub Actions. Weekly, at most 1 open PR.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 1
+    labels:
+      - ci
