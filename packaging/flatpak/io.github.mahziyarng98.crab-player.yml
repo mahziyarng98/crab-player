@@ -133,5 +133,5 @@ modules:
       - type: git
         url: https://github.com/mahziyarng98/crab-player.git
         tag: v0.1.1
-        commit: 0000000000000000000000000000000000000000
+        commit: 82775cfa55891fea1fd8ea05c1ec5008ad0f2edc
       - cargo-sources.json
