@@ -27,7 +27,7 @@ optdepends=(
 )
 source=("$pkgname-$pkgver.tar.gz::https://github.com/mahziyarng98/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
 # sha256 of the GitHub tag archive (updpkgsums regenerates it).
-sha256sums=('SKIP')
+sha256sums=('2ddfd0df7824e50ffc55ad7b542b303e38e4ad1cd5649d9085d64a7801106afe')
 
 _app_id=io.github.mahziyarng98.crab-player
 
