@@ -39,6 +39,15 @@ The old `crab-player.desktop` and `crab-player.png` icons from an earlier
 user install are removed by `scripts/install.sh` (it uninstalls the
 previous manifest first). Default-application settings are never touched.
 
+The 16×16 and 24×24 icons are deliberately **hand-drawn pixel art** (a
+simplified bold purple crab on the brand dark rounded square, using the
+palette from `src/ui/theme.rs`): downscaling the big logo to those sizes
+turns it into noise. `scripts/draw-small-icons.py` regenerates them; it is
+a standalone Python 3 script (Pillow) with no third-party artwork, and its
+output is checked in under `assets/icons/hicolor/`. All packaging paths
+copy the whole `assets/icons/hicolor` tree, so a change to any size is
+picked up by every package automatically.
+
 ## libmpv is loaded at runtime
 
 `libmpv2-sys` links `-lmpv`, which made `libmpv.so.2` a hard dependency: on
