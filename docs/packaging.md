@@ -179,7 +179,7 @@ uses the release tag (see below).
   with Flathub's
   [`flatpak-cargo-generator.py`](https://github.com/flathub/flatpak-builder-tools/tree/master/cargo)
   and committed, so no network access is needed during the build.
-- The crab-player module is a `git` source with `tag: v0.1.1` and the
+- The crab-player module is a `git` source with `tag: v0.1.2` and the
   tag's commit, which is what Flathub builds. `build.sh` swaps that one
   source for the checkout when building locally.
 
@@ -267,7 +267,9 @@ with docker. "Container test" is `packaging/test-in-container.sh`: install
 in a clean image (only Xvfb and Mesa added), play an H.264/AAC clip, pass
 when the first video frame is drawn (software OpenGL, llvmpipe). The
 Flatpak row was rebuilt and retested for 0.1.1 on 2026-11-12; the other
-artifacts below are the 0.1.0 ones and were not rebuilt for 0.1.1.
+artifacts below are the 0.1.0 ones and were not rebuilt for 0.1.1. 0.1.2
+changed only the 16x16 and 24x24 px icons; its packages are built by the
+release workflow and were not retested locally.
 
 | Format | File | Size | Built here | Tested here |
 | --- | --- | --- | --- | --- |

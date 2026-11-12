@@ -14,7 +14,7 @@
 %global debug_package %{nil}
 
 Name:           crab-player
-Version:        0.1.1
+Version:        0.1.2
 Release:        1%{?dist}
 Summary:        Fast native media player
 License:        MIT
@@ -87,5 +87,9 @@ done
 %{_datadir}/icons/hicolor/*/apps/%{app_id}.png
 
 %changelog
+* Thu Nov 12 2026 Mahziyar <289230375+mahziyarng98@users.noreply.github.com> - 0.1.2-1
+- Simplified 16x16 and 24x24 px icons.
+* Thu Nov 12 2026 Mahziyar <289230375+mahziyarng98@users.noreply.github.com> - 0.1.1-1
+- New application id, save dialog for images, narrower Flatpak sandbox.
 * Wed Nov 11 2026 Mahziyar <289230375+mahziyarng98@users.noreply.github.com> - 0.1.0-1
 - First release.

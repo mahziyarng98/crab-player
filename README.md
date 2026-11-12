@@ -80,8 +80,8 @@ and GIF capture, DVD/BD navigation, a shortcut editor.
 | You want nothing installed system-wide | the AppImage | one file, runs from anywhere |
 | A distribution with its own libmpv but no package above | the tarball + `install.sh` | prebuilt binary, uses the system libmpv |
 
-Release files are attached to the [v0.1.1
-release](https://github.com/mahziyarng98/crab-player/releases/tag/v0.1.1)
+Release files are attached to the [v0.1.2
+release](https://github.com/mahziyarng98/crab-player/releases/tag/v0.1.2)
 with `SHA256SUMS`; the commands below download from there. Every package can
 also be built from this checkout; see
 [`docs/packaging.md`](docs/packaging.md) for how each one is made and what
@@ -90,8 +90,8 @@ was tested.
 ### Arch Linux
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player-0.1.1-1-x86_64.pkg.tar.zst
-sudo pacman -U crab-player-0.1.1-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.2/crab-player-0.1.2-1-x86_64.pkg.tar.zst
+sudo pacman -U crab-player-0.1.2-1-x86_64.pkg.tar.zst
 ```
 
 Or build it from this checkout: `packaging/arch/build-local.sh` writes
@@ -100,8 +100,8 @@ Or build it from this checkout: `packaging/arch/build-local.sh` writes
 ### Debian and Ubuntu
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player_0.1.1-1_amd64.deb
-sudo apt install ./crab-player_0.1.1-1_amd64.deb
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.2/crab-player_0.1.2-1_amd64.deb
+sudo apt install ./crab-player_0.1.2-1_amd64.deb
 sudo apt install libavcodec-extra          # optional: the codecs Debian ships separately
 ```
 
@@ -111,9 +111,9 @@ Needs `libmpv2` (Debian 12+, Ubuntu 23.04+). Ubuntu 22.04 only has
 ### Fedora and openSUSE
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player-0.1.1-1.fc45.x86_64.rpm
-sudo dnf install ./crab-player-0.1.1-1.fc45.x86_64.rpm          # Fedora
-sudo zypper install ./crab-player-0.1.1-1.fc45.x86_64.rpm       # openSUSE Tumbleweed
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.2/crab-player-0.1.2-1.fc45.x86_64.rpm
+sudo dnf install ./crab-player-0.1.2-1.fc45.x86_64.rpm          # Fedora
+sudo zypper install ./crab-player-0.1.2-1.fc45.x86_64.rpm       # openSUSE Tumbleweed
 ```
 
 Fedora's own FFmpeg leaves out H.264, HEVC and other patented codecs.
@@ -125,8 +125,8 @@ repository does the same.
 ### Flatpak
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/Crab_Player-0.1.1-x86_64.flatpak
-flatpak install --user ./Crab_Player-0.1.1-x86_64.flatpak
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.2/Crab_Player-0.1.2-x86_64.flatpak
+flatpak install --user ./Crab_Player-0.1.2-x86_64.flatpak
 flatpak run io.github.mahziyarng98.crab-player
 ```
 
@@ -140,9 +140,9 @@ enough.
 ### AppImage
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/Crab_Player-0.1.1-x86_64.AppImage
-chmod +x Crab_Player-0.1.1-x86_64.AppImage
-./Crab_Player-0.1.1-x86_64.AppImage movie.mkv
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.2/Crab_Player-0.1.2-x86_64.AppImage
+chmod +x Crab_Player-0.1.2-x86_64.AppImage
+./Crab_Player-0.1.2-x86_64.AppImage movie.mkv
 ```
 
 Runs on any x86_64 distribution with glibc 2.35 or newer, with or without
@@ -151,8 +151,8 @@ mpv installed. Graphics and VA-API drivers are the system's own.
 ### Tarball, or from this checkout
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player-0.1.1-linux-x86_64.tar.gz
-tar xf crab-player-0.1.1-linux-x86_64.tar.gz && cd crab-player-0.1.1-linux-x86_64
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.2/crab-player-0.1.2-linux-x86_64.tar.gz
+tar xf crab-player-0.1.2-linux-x86_64.tar.gz && cd crab-player-0.1.2-linux-x86_64
 scripts/install.sh                         # for your user, into ~/.local (no root)
 sudo scripts/install.sh --prefix /usr/local  # or system-wide
 scripts/uninstall.sh                       # removes exactly what install.sh put there
@@ -326,14 +326,12 @@ method are in [`docs/performance.md`](docs/performance.md).
 - Zero-copy hardware decoding works on Wayland only (see above).
 - Always on top depends on the window manager and does nothing on native
   Wayland, which has no protocol for it.
-- The 16 px icon is too small for the logo's detail: the crab reads as a
-  purple shape and the play button is lost.
 - Track selection, delays and picture settings are not remembered per file.
 - No subtitle styling options, equalizer, shaders or thumbnail capture yet.
 - Packages were built and install-tested in containers and on one Arch
   machine; the release packages are built by the release workflow. See
   [`docs/packaging.md`](docs/packaging.md) for exactly what was tested
-  where. 0.1.1 is on GitHub; there is no AUR entry, and the Flathub
+  where. 0.1.2 is on GitHub; there is no AUR entry, and the Flathub
   submission is prepared but still pending review.
 - In the Flatpak the clipboard is unavailable (the sandbox does not expose
   Wayland's data-control protocol), so "Copy location" does nothing there.

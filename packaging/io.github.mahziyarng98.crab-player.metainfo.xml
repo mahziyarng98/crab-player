@@ -87,6 +87,14 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.1.2" date="2026-11-12">
+      <description>
+        <p>Small icon fix.</p>
+        <ul>
+          <li>Hand-drawn 16×16 and 24×24 px icons that stay readable in menus, task switchers and other small slots</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.1" date="2026-11-12">
       <description>
         <p>Packaging and sandbox fixes for the first Flathub submission.</p>
