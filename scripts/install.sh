@@ -11,9 +11,9 @@
 #
 # Installs into PREFIX (default ~/.local; --prefix or $PREFIX):
 #   bin/crab-player
-#   share/applications/io.github.mahziyarng98.CrabPlayer.desktop   (Exec = absolute path above)
-#   share/icons/hicolor/<size>x<size>/apps/io.github.mahziyarng98.CrabPlayer.png
-#   share/metainfo/io.github.mahziyarng98.CrabPlayer.metainfo.xml
+#   share/applications/io.github.mahziyarng98.crab-player.desktop   (Exec = absolute path above)
+#   share/icons/hicolor/<size>x<size>/apps/io.github.mahziyarng98.crab-player.png
+#   share/metainfo/io.github.mahziyarng98.crab-player.metainfo.xml
 #   share/crab-player/install-manifest             (what uninstall.sh removes)
 #
 # The desktop entry lists the media types Crab Player opens, so it appears
@@ -69,7 +69,7 @@ if [ "$build" = 1 ]; then
 fi
 [ -x "$binary" ] || { echo "no binary at $binary; build it first" >&2; exit 1; }
 
-app_id="io.github.mahziyarng98.CrabPlayer"
+app_id="io.github.mahziyarng98.crab-player"
 # Final locations (what the desktop entry and the manifest refer to) and
 # where the files are written now (the same unless DESTDIR stages them).
 bin_dir="$prefix/bin"

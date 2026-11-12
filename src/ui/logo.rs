@@ -15,49 +15,49 @@ const SOURCES: [(u32, &[u8]); 8] = [
     (
         16,
         include_bytes!(
-            "../../assets/icons/hicolor/16x16/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/16x16/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
     (
         24,
         include_bytes!(
-            "../../assets/icons/hicolor/24x24/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/24x24/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
     (
         32,
         include_bytes!(
-            "../../assets/icons/hicolor/32x32/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/32x32/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
     (
         48,
         include_bytes!(
-            "../../assets/icons/hicolor/48x48/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/48x48/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
     (
         64,
         include_bytes!(
-            "../../assets/icons/hicolor/64x64/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/64x64/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
     (
         128,
         include_bytes!(
-            "../../assets/icons/hicolor/128x128/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/128x128/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
     (
         256,
         include_bytes!(
-            "../../assets/icons/hicolor/256x256/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/256x256/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
     (
         512,
         include_bytes!(
-            "../../assets/icons/hicolor/512x512/apps/io.github.mahziyarng98.CrabPlayer.png"
+            "../../assets/icons/hicolor/512x512/apps/io.github.mahziyarng98.crab-player.png"
         ),
     ),
 ];

@@ -76,11 +76,12 @@ and GIF capture, DVD/BD navigation, a shortcut editor.
 | Debian 12+, Ubuntu 24.04+ and derivatives | the `.deb` | native, updates with the system libraries |
 | Fedora, openSUSE Tumbleweed | the `.rpm` | native; add RPM Fusion / Packman for all codecs |
 | Ubuntu 22.04, RHEL 9 / Alma / Rocky, openSUSE Leap 15, or anything else | the Flatpak, or the AppImage | carry their own libmpv and FFmpeg |
+| Flathub | the Flatpak | coming soon, pending review |
 | You want nothing installed system-wide | the AppImage | one file, runs from anywhere |
 | A distribution with its own libmpv but no package above | the tarball + `install.sh` | prebuilt binary, uses the system libmpv |
 
-Release files are attached to the [v0.1.0
-release](https://github.com/mahziyarng98/crab-player/releases/tag/v0.1.0)
+Release files are attached to the [v0.1.1
+release](https://github.com/mahziyarng98/crab-player/releases/tag/v0.1.1)
 with `SHA256SUMS`; the commands below download from there. Every package can
 also be built from this checkout; see
 [`docs/packaging.md`](docs/packaging.md) for how each one is made and what
@@ -89,8 +90,8 @@ was tested.
 ### Arch Linux
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player-0.1.0-1-x86_64.pkg.tar.zst
-sudo pacman -U crab-player-0.1.0-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player-0.1.1-1-x86_64.pkg.tar.zst
+sudo pacman -U crab-player-0.1.1-1-x86_64.pkg.tar.zst
 ```
 
 Or build it from this checkout: `packaging/arch/build-local.sh` writes
@@ -99,8 +100,8 @@ Or build it from this checkout: `packaging/arch/build-local.sh` writes
 ### Debian and Ubuntu
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player_0.1.0-1_amd64.deb
-sudo apt install ./crab-player_0.1.0-1_amd64.deb
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player_0.1.1-1_amd64.deb
+sudo apt install ./crab-player_0.1.1-1_amd64.deb
 sudo apt install libavcodec-extra          # optional: the codecs Debian ships separately
 ```
 
@@ -110,9 +111,9 @@ Needs `libmpv2` (Debian 12+, Ubuntu 23.04+). Ubuntu 22.04 only has
 ### Fedora and openSUSE
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player-0.1.0-1.fc45.x86_64.rpm
-sudo dnf install ./crab-player-0.1.0-1.fc45.x86_64.rpm          # Fedora
-sudo zypper install ./crab-player-0.1.0-1.fc45.x86_64.rpm       # openSUSE Tumbleweed
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player-0.1.1-1.fc45.x86_64.rpm
+sudo dnf install ./crab-player-0.1.1-1.fc45.x86_64.rpm          # Fedora
+sudo zypper install ./crab-player-0.1.1-1.fc45.x86_64.rpm       # openSUSE Tumbleweed
 ```
 
 Fedora's own FFmpeg leaves out H.264, HEVC and other patented codecs.
@@ -124,20 +125,24 @@ repository does the same.
 ### Flatpak
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/Crab_Player-0.1.0-x86_64.flatpak
-flatpak install --user ./Crab_Player-0.1.0-x86_64.flatpak
-flatpak run io.github.mahziyarng98.CrabPlayer
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/Crab_Player-0.1.1-x86_64.flatpak
+flatpak install --user ./Crab_Player-0.1.1-x86_64.flatpak
+flatpak run io.github.mahziyarng98.crab-player
 ```
 
 The Freedesktop runtime it uses brings FFmpeg, and its `codecs-extra`
-extension the patented codecs; both are installed from Flathub.
+extension the patented codecs; both are installed from Flathub. A Flathub
+submission is prepared but not open yet, so for now this bundle is the way
+to install the Flatpak. Once it is on Flathub,
+`flatpak install --user flathub io.github.mahziyarng98.crab-player` will be
+enough.
 
 ### AppImage
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/Crab_Player-0.1.0-x86_64.AppImage
-chmod +x Crab_Player-0.1.0-x86_64.AppImage
-./Crab_Player-0.1.0-x86_64.AppImage movie.mkv
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/Crab_Player-0.1.1-x86_64.AppImage
+chmod +x Crab_Player-0.1.1-x86_64.AppImage
+./Crab_Player-0.1.1-x86_64.AppImage movie.mkv
 ```
 
 Runs on any x86_64 distribution with glibc 2.35 or newer, with or without
@@ -146,8 +151,8 @@ mpv installed. Graphics and VA-API drivers are the system's own.
 ### Tarball, or from this checkout
 
 ```sh
-curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.0/crab-player-0.1.0-linux-x86_64.tar.gz
-tar xf crab-player-0.1.0-linux-x86_64.tar.gz && cd crab-player-0.1.0-linux-x86_64
+curl -LO https://github.com/mahziyarng98/crab-player/releases/download/v0.1.1/crab-player-0.1.1-linux-x86_64.tar.gz
+tar xf crab-player-0.1.1-linux-x86_64.tar.gz && cd crab-player-0.1.1-linux-x86_64
 scripts/install.sh                         # for your user, into ~/.local (no root)
 sudo scripts/install.sh --prefix /usr/local  # or system-wide
 scripts/uninstall.sh                       # removes exactly what install.sh put there
@@ -209,8 +214,9 @@ crab-player --version
 Settings live in `$XDG_CONFIG_HOME/crab-player/config.toml` (usually
 `~/.config/crab-player/config.toml`) and are written on exit. A broken
 settings file does not stop the player: it starts with defaults, keeps the
-file as `config.invalid.toml` and says so. Saved images go to
-`~/Pictures/crab-player/`.
+file as `config.invalid.toml` and says so. Save Image (`Ctrl+Shift+S`)
+writes the current frame through the desktop save dialog, so the folder and
+name are yours to choose.
 
 ## Supported formats
 
@@ -327,7 +333,8 @@ method are in [`docs/performance.md`](docs/performance.md).
 - Packages were built and install-tested in containers and on one Arch
   machine; the release packages are built by the release workflow. See
   [`docs/packaging.md`](docs/packaging.md) for exactly what was tested
-  where. 0.1.0 is on GitHub; there is no AUR or Flathub entry yet.
+  where. 0.1.1 is on GitHub; there is no AUR entry, and the Flathub
+  submission is prepared but still pending review.
 - In the Flatpak the clipboard is unavailable (the sandbox does not expose
   Wayland's data-control protocol), so "Copy location" does nothing there.
 - On a system without fontconfig or without any installed fonts, the

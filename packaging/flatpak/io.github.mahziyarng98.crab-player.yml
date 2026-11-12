@@ -2,16 +2,18 @@
 #
 # Build and install for the current user (packaging/flatpak/build.sh does
 # all of this and also writes a single-file bundle):
-#   packaging/flatpak/cargo-sources.py         # Cargo.lock -> cargo-sources.json
-#   flatpak-builder --user --install --force-clean --install-deps-from=flathub \
-#     packaging/flatpak/build-dir packaging/flatpak/io.github.mahziyarng98.CrabPlayer.yml
+#   packaging/flatpak/build.sh
 #
 # The freedesktop runtime provides FFmpeg (with the codecs-extra extension
 # for patented codecs, installed automatically from Flathub), libva and
 # Mesa's VA-API drivers. libass, libplacebo and libmpv are built here; mpv
 # only as the library, without the command line player or scripting.
+#
+# The crab-player module builds the v0.1.1 release tag. Cargo is offline:
+# cargo-sources.json (generated from that tag's Cargo.lock by
+# flatpak-cargo-generator.py) provides every crate.
 
-app-id: io.github.mahziyarng98.CrabPlayer
+app-id: io.github.mahziyarng98.crab-player
 runtime: org.freedesktop.Platform
 runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
@@ -27,16 +29,12 @@ finish-args:
   # GPU rendering and VA-API hardware decoding.
   - --device=dri
   - --socket=pulseaudio
-  # Network streams (File > Open URL).
+  # File > Open URL and other network streams (http, rtsp, rtmp, srt, …).
   - --share=network
-  # Files come through the file chooser portal and, for "Open with", the
-  # document portal. Drag and drop from file managers hands over plain
-  # paths, which the sandbox can only read in these folders.
+  # Files are opened through the file chooser portal. Drag and drop from a
+  # file manager hands over plain paths, which the sandbox can only read in
+  # the video folder.
   - --filesystem=xdg-videos:ro
-  - --filesystem=xdg-music:ro
-  - --filesystem=xdg-download:ro
-  # Capture > Save Image writes ~/Pictures/crab-player.
-  - --filesystem=xdg-pictures/crab-player:create
 
 build-options:
   # Some builder versions default to lib64 here; everything in the bundle,
@@ -81,8 +79,8 @@ modules:
       - -Dtests=false
       - -Dlcms=enabled
     sources:
-      # The git checkout brings the bundled submodules (glad, jinja, …)
-      # the build needs.
+      # The git checkout brings the bundled submodules (glad, …) the build
+      # needs. Tag and commit are pinned; there is no branch.
       - type: git
         url: https://github.com/haasn/libplacebo.git
         tag: v7.360.1
@@ -121,24 +119,19 @@ modules:
     build-commands:
       - cargo --offline build --release --locked
       - install -Dm755 target/release/crab-player /app/bin/crab-player
-      - install -Dm644 packaging/io.github.mahziyarng98.CrabPlayer.desktop
-        /app/share/applications/io.github.mahziyarng98.CrabPlayer.desktop
-      - install -Dm644 packaging/io.github.mahziyarng98.CrabPlayer.metainfo.xml
-        /app/share/metainfo/io.github.mahziyarng98.CrabPlayer.metainfo.xml
+      - install -Dm644 packaging/io.github.mahziyarng98.crab-player.desktop
+        /app/share/applications/io.github.mahziyarng98.crab-player.desktop
+      - install -Dm644 packaging/io.github.mahziyarng98.crab-player.metainfo.xml
+        /app/share/metainfo/io.github.mahziyarng98.crab-player.metainfo.xml
       - for size in 16 24 32 48 64 128 256 512; do
-          install -Dm644 assets/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.CrabPlayer.png
-          /app/share/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.CrabPlayer.png;
+          install -Dm644 assets/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.crab-player.png
+          /app/share/icons/hicolor/${size}x${size}/apps/io.github.mahziyarng98.crab-player.png;
         done
-      - install -Dm644 LICENSE /app/share/licenses/io.github.mahziyarng98.CrabPlayer/LICENSE
+      - install -Dm644 LICENSE
+        /app/share/licenses/io.github.mahziyarng98.crab-player/crab-player/LICENSE
     sources:
-      # The checkout this manifest lives in. A Flathub submission replaces
-      # this with a git source pinned to the release tag.
-      - type: dir
-        path: ../..
-        skip:
-          - target
-          - dist
-          - packaging/flatpak/build-dir
-          - packaging/flatpak/.flatpak-builder
-          - packaging/flatpak/repo
+      - type: git
+        url: https://github.com/mahziyarng98/crab-player.git
+        tag: v0.1.1
+        commit: 0000000000000000000000000000000000000000
       - cargo-sources.json

@@ -169,7 +169,7 @@ if readelf -d target/release/crab-player | grep -q 'NEEDED.*libmpv'; then
 fi
 
 echo "== AppDir"
-app_id="io.github.mahziyarng98.CrabPlayer"
+app_id="io.github.mahziyarng98.crab-player"
 appdir="$cache/AppDir"
 rm -rf "$appdir"
 lib="$appdir/usr/lib"

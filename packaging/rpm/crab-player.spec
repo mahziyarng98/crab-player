@@ -9,12 +9,12 @@
 # and GL libraries are opened at runtime (dlopen), which the automatic
 # dependency generator cannot see.
 
-%global app_id io.github.mahziyarng98.CrabPlayer
+%global app_id io.github.mahziyarng98.crab-player
 # The release profile strips the binary; there is no debug info to package.
 %global debug_package %{nil}
 
 Name:           crab-player
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Fast native media player
 License:        MIT

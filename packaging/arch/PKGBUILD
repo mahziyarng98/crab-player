@@ -1,6 +1,6 @@
 # Maintainer: Mahziyar <289230375+mahziyarng98@users.noreply.github.com>
 pkgname=crab-player
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="Fast native media player built with Rust, egui and libmpv"
 arch=('x86_64' 'aarch64')
@@ -29,7 +29,7 @@ source=("$pkgname-$pkgver.tar.gz::https://github.com/mahziyarng98/$pkgname/archi
 # Replace with the release tarball's checksum (updpkgsums) before publishing.
 sha256sums=('SKIP')
 
-_app_id=io.github.mahziyarng98.CrabPlayer
+_app_id=io.github.mahziyarng98.crab-player
 
 prepare() {
   cd "$pkgname-$pkgver"

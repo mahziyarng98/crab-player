@@ -6,15 +6,15 @@ actually tested. The status table at the end is the honest summary.
 
 ## Application id
 
-One reverse-DNS id is used everywhere: **`io.github.mahziyarng98.CrabPlayer`**.
+One reverse-DNS id is used everywhere: **`io.github.mahziyarng98.crab-player`**.
 
 | Where | Value |
 | --- | --- |
-| Wayland `app_id`, X11 `WM_CLASS` | `io.github.mahziyarng98.CrabPlayer` (`app::APP_ID`) |
-| Desktop file | `io.github.mahziyarng98.CrabPlayer.desktop`, `StartupWMClass` and `Icon` the same |
-| Icons | `hicolor/<size>/apps/io.github.mahziyarng98.CrabPlayer.png` |
-| AppStream | `io.github.mahziyarng98.CrabPlayer.metainfo.xml`, `<id>` the same |
-| Flatpak | `app-id: io.github.mahziyarng98.CrabPlayer` |
+| Wayland `app_id`, X11 `WM_CLASS` | `io.github.mahziyarng98.crab-player` (`app::APP_ID`) |
+| Desktop file | `io.github.mahziyarng98.crab-player.desktop`, `StartupWMClass` and `Icon` the same |
+| Icons | `hicolor/<size>/apps/io.github.mahziyarng98.crab-player.png` |
+| AppStream | `io.github.mahziyarng98.crab-player.metainfo.xml`, `<id>` the same |
+| Flatpak | `app-id: io.github.mahziyarng98.crab-player` |
 | Binary, config, data | stay `crab-player` (`~/.config/crab-player`, `~/.local/share/crab-player`) |
 
 Why: Flatpak and Flathub require the desktop file, the icon and the
@@ -22,10 +22,14 @@ AppStream id to be the reverse-DNS app id, and compositors find a window's
 icon through the desktop file whose name matches the window's app id. The
 earlier setup used `crab-player` for the window but
 `io.github.crabplayer.CrabPlayer` for the Flatpak, so one of the two would
-always have shown a generic icon. `io.github.<user>.<App>` is the form
-Flathub accepts for projects hosted on GitHub without a domain of their
-own. A unit test (`app_id_matches_the_packaging`) fails if the desktop
-file, the AppStream file or the Flatpak manifest drift from `APP_ID`.
+always have shown a generic icon. `io.github.<user>.<repository>` is the
+form Flathub requires for projects hosted on GitHub without a domain of
+their own: its linter checks that the id resolves to a real repository, so
+`io.github.mahziyarng98.CrabPlayer` failed with `appid-url-not-reachable`
+(it looked for `github.com/mahziyarng98/CrabPlayer`) while
+`io.github.mahziyarng98.crab-player` matches this repository. A unit test
+(`app_id_matches_the_packaging`) fails if the desktop file, the AppStream
+file or the Flatpak manifest drift from `APP_ID`.
 
 Checked on the real Hyprland session: the window's class is the new id,
 and GIO resolves it to the installed desktop entry and its 48 px icon.
@@ -143,7 +147,8 @@ For the AUR (nothing has been published):
 
 `packaging/flatpak/build.sh` → a local repository and
 `dist/Crab_Player-<version>-x86_64.flatpak`; `--install` also installs it
-for the current user.
+for the current user. It builds the working tree; the manifest itself
+uses the release tag (see below).
 
 - `org.freedesktop.Platform` 26.08: FFmpeg, libva and Mesa's VA-API
   drivers come from the runtime; the `codecs-extra` extension adds the
@@ -152,36 +157,41 @@ for the current user.
   modules: libass and mpv from release tarballs checked by sha256,
   libplacebo from git pinned to its tag's commit (its submodules are part
   of the build).
-- Sandbox: Wayland with X11 fallback, DRI (GPU and VA-API), PulseAudio,
-  network for streams. Files come through the file chooser portal and,
-  for "Open with", the document portal; drag and drop from a file manager
-  passes plain paths, so `~/Videos`, `~/Music` and `~/Downloads` are
-  readable. Saved images go to `~/Pictures/crab-player`.
-- `packaging/flatpak/cargo-sources.py` turns `Cargo.lock` into
-  `cargo-sources.json` (every crate as a checksummed source), because
-  flatpak-builder builds offline.
-- For Flathub the `dir` source of the crab-player module becomes a `git`
-  source pinned to the release tag.
+- Sandbox: Wayland with X11 fallback, DRI (GPU and VA-API), PulseAudio
+  and network for streams and "Open URL". Files come through the file
+  chooser and save dialogs' portal and, for "Open with", the document
+  portal; drag and drop from a file manager passes plain paths, so
+  `~/Videos` is readable. Nothing else on the host is mounted, and only
+  `~/Videos` is read, not written; saved images go wherever the save
+  dialog sends them, which the portal allows without a filesystem
+  permission.
+- Cargo builds offline. `packaging/flatpak/cargo-sources.json` lists
+  every crate in `Cargo.lock` as a checksummed source; it is generated
+  with Flathub's
+  [`flatpak-cargo-generator.py`](https://github.com/flathub/flatpak-builder-tools/tree/master/cargo)
+  and committed, so no network access is needed during the build.
+- The crab-player module is a `git` source with `tag: v0.1.1` and the
+  tag's commit, which is what Flathub builds. `build.sh` swaps that one
+  source for the checkout when building locally.
 
-#### Submitting to Flathub (not done yet)
+#### Flathub
 
-1. Fork `flathub/flathub` and branch off `new-pr`.
-2. Copy `packaging/flatpak/io.github.mahziyarng98.CrabPlayer.yml` and
-   `cargo-sources.json` into
-   `io.github.mahziyarng98.CrabPlayer/`, and replace the crab-player
-   module's `dir` source with a `git` source at the `v0.1.0` tag:
-   `url: https://github.com/mahziyarng98/crab-player.git`, `tag: v0.1.0`,
-   `commit: <the tagged commit>`.
-3. Regenerate `cargo-sources.json` from that tag's `Cargo.lock` with
-   `packaging/flatpak/cargo-sources.py`, and build the bundle locally with
-   `flatpak-builder --repo=repo --force-clean build-dir <manifest>` to
-   confirm it still starts and plays.
-4. Open the pull request; the reviewers check the licence, the AppStream
-   metadata (`appstreamcli validate` passes) and that no network access is
-   requested beyond the `finish-args` in the manifest. Flathub's CI then
-   builds it and publishes after the merge.
-5. Later versions are a pull request in that repository that bumps the tag
-   and `cargo-sources.json`; nothing is published from this repository.
+The manifest and `cargo-sources.json` are ready under
+`packaging/flatpak/`, and `packaging/flathub/README.md` has the exact
+submission steps. The pull request against `flathub/flathub`'s `new-pr`
+branch has not been opened yet, so the app is not on Flathub. Once it is
+merged, installation is:
+
+```sh
+flatpak install --user flathub io.github.mahziyarng98.crab-player
+```
+
+Later versions are a pull request in that repository that bumps the tag,
+the commit and `cargo-sources.json`; nothing is published from this
+repository. Flathub's requirements that shaped the manifest: the app id
+must match the repository URL, every source is pinned (a tag plus its
+commit, or a sha256), the build is offline, the runtime is the current
+`org.freedesktop.Platform`, and each `finish-arg` has to be justified.
 
 ### Generic tarball and install script
 
@@ -246,7 +256,9 @@ libraries the process mapped.
 Tested on 2026-11-11 on an Arch Linux machine (Hyprland, AMD Radeon 680M)
 with docker. "Container test" is `packaging/test-in-container.sh`: install
 in a clean image (only Xvfb and Mesa added), play an H.264/AAC clip, pass
-when the first video frame is drawn (software OpenGL, llvmpipe).
+when the first video frame is drawn (software OpenGL, llvmpipe). The
+Flatpak row was rebuilt and retested for 0.1.1 on 2026-11-12; the other
+artifacts below are the 0.1.0 ones and were not rebuilt for 0.1.1.
 
 | Format | File | Size | Built here | Tested here |
 | --- | --- | --- | --- | --- |
@@ -254,7 +266,7 @@ when the first video frame is drawn (software OpenGL, llvmpipe).
 | .deb | `crab-player_0.1.0-1_amd64.deb` | 4.1 MB | yes, `debian:bookworm` container (`dpkg-buildpackage`, tests run) | container test passes on Debian 12 and Ubuntu 24.04 (dependencies resolved by apt) |
 | .rpm | `crab-player-0.1.0-1.fc45.x86_64.rpm` | 4.6 MB | yes, `fedora:45` container (`rpmbuild`, tests run) | container test passes on Fedora 45 and openSUSE Tumbleweed (soname requirements resolved by dnf and zypper) |
 | Arch | `crab-player-0.1.0-1-x86_64.pkg.tar.zst` | 5.2 MB | yes, `makepkg` on the host (128 tests in `check()`) | packaged binary passes the end-to-end render check; not installed system-wide (needs root); `PKGBUILD-git` only parsed (`makepkg --printsrcinfo`), not built |
-| Flatpak | `Crab_Player-0.1.0-x86_64.flatpak` | 5.1 MB | yes, `flatpak-builder` on the host | installed for the user on the real Hyprland session: plays, H.264 decoded through VA-API inside the sandbox, window class and icon match; then uninstalled again |
+| Flatpak | `Crab_Player-0.1.1-x86_64.flatpak` | 5.4 MB | yes, `flatpak-builder` on the host | installed for the user on the real Hyprland session: plays, H.264 decoded through VA-API inside the sandbox, seeking, audio and subtitle track switching, middle-click fullscreen in and out, and Capture ▸ Save Image through the portal save dialog; then uninstalled again |
 | Tarball | `crab-player-0.1.0-linux-x86_64.tar.gz` | 5.5 MB | yes, with the AppImage | its `install.sh` installed into a temporary HOME, the installed binary passes the end-to-end render check, `uninstall.sh` removed everything |
 | `install.sh` | — | — | — | user install on the real session (desktop entry, icon lookup by app id); system-wide mode only staged with `DESTDIR` (never run as root) |
 

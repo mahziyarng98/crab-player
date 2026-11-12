@@ -50,8 +50,8 @@ Screenshots: `docs/screenshots/`.
   (`ViewportCommand::BeginResize`), except where the seek bar reaches the
   edge.
 - View ▸ "Caption & Menu" (`Ctrl+M`) hides and shows the strip.
-- App id `io.github.mahziyarng98.CrabPlayer` (Wayland `app_id` and X11 class), matching
-  `io.github.mahziyarng98.CrabPlayer.desktop` and its `StartupWMClass`; the window title is
+- App id `io.github.mahziyarng98.crab-player` (Wayland `app_id` and X11 class), matching
+  `io.github.mahziyarng98.crab-player.desktop` and its `StartupWMClass`; the window title is
   "Crab Player". The binary, config and data folders stay `crab-player`.
 - Minimum size 640×400; default 1120×700.
 - Full screen is a viewport command, so the compositor handles workspace
@@ -78,7 +78,7 @@ The "Planned inventory" column is the target feature set.
 | **Audio** | Output Speakers ▸ (Auto, 1.0 … 7.1), Internal Audio Renderer, Use Equalizer, Presets, audio track selection | Volume, mute, Audio Track ▸ (real tracks, check mark on the active one, Next Track), Audio Delay ▸ (±100 ms, reset, current value) |
 | **Subtitles** | Load, Save, Download, Upload, Browse/Edit/Sync, subtitle track, default style | Load Subtitles… (external file, selected on load), Subtitle Track ▸ (Off + real tracks, Next Track), Subtitle Delay ▸ (±100 ms, reset); Save/Download/Upload/Sync/Style placeholders |
 | **Navigate** | Previous, Next, Go To…, Title/Root/Subtitle/Audio/Angle/Chapter menu, Favorites | Previous, Next, Go To… (seconds, `m:ss` or `h:mm:ss`) |
-| **Capture** | Save Image, Save Thumbnails, Advanced Capture, Save to Clipboard, GIF | Save Image (`Ctrl+Shift+S`, PNG at the video's resolution, with subtitles, into `~/Pictures/crab-player/`); the rest placeholders |
+| **Capture** | Save Image, Save Thumbnails, Advanced Capture, Save to Clipboard, GIF | Save Image (`Ctrl+Shift+S`, PNG at the video's resolution, with subtitles, through the desktop save dialog); the rest placeholders |
 | **Playlists** | Playlist Editor, Add File(s), Add Folder, Clear Playlist, Sort ▸ (name/folder asc/desc, random) | In the right-click menu: all of them; names sort naturally (`ep2` before `ep10`) and the playing item stays selected |
 | **Options** | Options…, Keyboard Shortcuts… | Options… (subset) |
 | **Help** | Home Page, Contact, About, Crash reporter | About |
@@ -307,7 +307,7 @@ Options pages, in the order they are planned.
 | Playback ▸ Sync Renderer | frame timing, offsets | Phase 2 (mpv properties) |
 | External Filters | filter graph editor | not planned; mpv `--vf/--af` |
 | Miscellaneous / Tweaks / Advanced | cache, threads, logging | Phase 3 |
-| Capture | output folder, format, naming | Phase 4 |
+| Capture | format, naming | Phase 4 (the save dialog picks the folder) |
 | MediaInfo | technical summary | Phase 4 |
 
 ## 12. Keyboard map
@@ -350,8 +350,7 @@ Rules: shortcuts are suppressed while a text field has focus; they work in
 full screen; they are not active while a menu popup is open (the popup owns
 the keys).
 
-Still to come: frame step (`.`/`,`), screenshot (`Ctrl+Shift+S`), cycle
-aspect ratio, chapter skip.
+Still to come: frame step (`.`/`,`), cycle aspect ratio, chapter skip.
 
 ## 13. Mouse, wheel and touch
 

@@ -1352,6 +1352,15 @@ impl MpvPlayer {
                 get_proc_address: load_symbol,
                 ctx: loader,
             }),
+            // Capture ▸ Save Image needs the frame read back from the GPU.
+            // Without advanced control, mpv falls back to a software
+            // screenshot when hardware decoding is active, and
+            // `libswscale` cannot convert a VA-API surface, so the capture
+            // fails. The render thread below already keeps the contract
+            // advanced control requires: every update callback requests a
+            // repaint, and `mpv_render_context_update()` runs immediately
+            // before each `mpv_render_context_render()`.
+            RenderParam::AdvancedControl(true),
         ];
         // The native display lets mpv's hardware decoders (VA-API) open the
         // same display connection as the window, which zero-copy interop

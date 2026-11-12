@@ -15,7 +15,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 binary="$(readlink -f "${1:?usage: $0 <binary> <out-dir>}")"
 out="$(mkdir -p "${2:?usage: $0 <binary> <out-dir>}" && cd "$2" && pwd)"
 version="$(sed -n 's/^version = "\(.*\)"/\1/p' "$root/Cargo.toml" | head -1)"
-app_id="io.github.mahziyarng98.CrabPlayer"
+app_id="io.github.mahziyarng98.crab-player"
 name="crab-player-$version-linux-x86_64"
 
 stage="$(mktemp -d)"

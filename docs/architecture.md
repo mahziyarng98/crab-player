@@ -447,11 +447,11 @@ Formats, build scripts and test results are in
   enables `system_font_fallback` only when both exist; otherwise egui's
   built-in fonts are used and a warning is logged.
 - **One application id.** All targets install
-  `io.github.mahziyarng98.CrabPlayer.desktop`, the AppStream file
-  `io.github.mahziyarng98.CrabPlayer.metainfo.xml` and the hicolor icons
+  `io.github.mahziyarng98.crab-player.desktop`, the AppStream file
+  `io.github.mahziyarng98.crab-player.metainfo.xml` and the hicolor icons
   from `assets/icons/`. The desktop file name, its `StartupWMClass`, the
   icon name, the Wayland app id, the X11 class, the Flatpak id and the
-  AppStream id are all `io.github.mahziyarng98.CrabPlayer` (`app::APP_ID`,
+  AppStream id are all `io.github.mahziyarng98.crab-player` (`app::APP_ID`,
   checked by a unit test), which is what lets compositors and software
   centres show the right icon. The binary, the config folder and the data
   folder (including eframe's window state, pinned with `persistence_path`)
@@ -468,4 +468,5 @@ Formats, build scripts and test results are in
 | 5 | Network UX: URL dialog, yt-dlp integration (external binary, opt-in). |
 | 6 (done) | Opening fixed on every path (non-blocking dialogs, Wayland drops, URI decoding), error banners, software retry, Media Info, codec matrix, caption strip with logo, centred transport, user-level installer. |
 | 7 (done) | Release 0.1.0: one reverse-DNS app id, AppStream data, middle-click full screen, libmpv loaded at runtime, AppImage, .deb, .rpm, Arch, Flatpak and tarball packaging, CI and release workflows. |
-| 8 | Accessibility pass, translations, Flathub and AUR submission. |
+| 7.1 (done) | Release 0.1.1: app id matching the repository URL, save dialog for images, narrower Flatpak sandbox, Flathub manifest prepared. |
+| 8 | Accessibility pass, translations, Flathub submission and AUR. |
