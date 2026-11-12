@@ -62,8 +62,8 @@ jobs:
           packages: appstream desktop-file-utils shellcheck
       - name: Validate
         run: |
-          desktop-file-validate packaging/io.github.mahziyarng98.CrabPlayer.desktop
-          appstreamcli validate --no-net packaging/io.github.mahziyarng98.CrabPlayer.metainfo.xml
+          desktop-file-validate packaging/io.github.mahziyarng98.crab-player.desktop
+          appstreamcli validate --no-net packaging/io.github.mahziyarng98.crab-player.metainfo.xml
       - name: Shell scripts
         run: |
           shellcheck -S warning scripts/*.sh packaging/*.sh packaging/*/build.sh packaging/arch/build-local.sh

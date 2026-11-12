@@ -3,6 +3,7 @@
 //! The layout is the classic desktop player shape: menu bar on top, video in the middle, transport bar at the
 //! bottom, playlist docked on the right. Chrome hides itself in full screen.
 
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
@@ -27,7 +28,7 @@ pub const APP_SLUG: &str = "crab-player";
 /// name, the Flatpak id and the AppStream id. Compositors find the icon
 /// through the desktop file of the same name, so all of them must stay
 /// identical (see docs/packaging.md, "Application id").
-pub const APP_ID: &str = "io.github.mahziyarng98.CrabPlayer";
+pub const APP_ID: &str = "io.github.mahziyarng98.crab-player";
 /// Application icon, embedded so the window needs no files.
 pub const ICON_PNG: &[u8] = ui::logo::WINDOW_ICON_PNG;
 /// Smallest window, in points (ui-spec §2). Zoom never goes below it.
@@ -65,11 +66,26 @@ pub struct PlayerApp {
     logo: ui::logo::Logo,
     /// Native file dialogs, running off the UI thread.
     dialogs: Dialogs,
+    /// Frame captured to a temporary file while the save dialog is open.
+    pending_screenshot: Option<PathBuf>,
+    /// A screenshot mpv is still writing; the save dialog opens only once
+    /// the file is complete, and not at all if the capture failed.
+    pending_capture: Option<PendingCapture>,
     /// When the backend was last asked for the Media Info details.
     media_info_asked: Option<Instant>,
     /// File drops on native Wayland, which the windowing library does not
     /// deliver itself. `None` on X11, where it does.
     drop_target: Option<crate::wayland_dnd::WaylandDrop>,
+}
+
+/// A screenshot mpv is still writing.
+struct PendingCapture {
+    /// Where mpv writes the PNG.
+    temp: PathBuf,
+    /// Suggested file name for the save dialog.
+    name: String,
+    /// Give up and report failure after this point.
+    deadline: Instant,
 }
 
 /// What adding one local path to the playlist led to.
@@ -143,6 +159,8 @@ impl PlayerApp {
             rng: Shuffle::from_time(),
             backend,
             dialogs: Dialogs::default(),
+            pending_screenshot: None,
+            pending_capture: None,
             media_info_asked: None,
             drop_target,
         };
@@ -270,6 +288,10 @@ impl PlayerApp {
 
     /// The result of a native file dialog.
     fn dialog_finished(&mut self, picked: crate::dialogs::Picked) {
+        if picked.purpose == Purpose::SaveImage {
+            self.save_screenshot(picked.paths.first());
+            return;
+        }
         let entries: Vec<String> = picked
             .paths
             .iter()
@@ -293,13 +315,40 @@ impl PlayerApp {
                     self.load_subtitle(path);
                 }
             }
+            Purpose::SaveImage => unreachable!("handled above"),
+        }
+    }
+
+    /// Finish Capture ▸ Save Image: copy the captured frame to the file the
+    /// portal dialog returned, then drop the temporary copy.
+    fn save_screenshot(&mut self, target: Option<&PathBuf>) {
+        let Some(temp) = self.pending_screenshot.take() else {
+            return;
+        };
+        let copied = target.map(|target| {
+            std::fs::copy(&temp, target)
+                .inspect_err(
+                    |err| tracing::warn!(%err, path = %target.display(), "cannot save the image"),
+                )
+                .ok()
+        });
+        let _ = std::fs::remove_file(&temp);
+        match (target, copied) {
+            (Some(_), Some(_)) => {
+                let name = target
+                    .and_then(|path| path.file_name())
+                    .map_or_else(String::new, |name| name.to_string_lossy().into_owned());
+                self.ui.flash(format!("Saved {name}"));
+            }
+            (Some(_), None) => self.ui.flash("Could not save the image"),
+            (None, _) => self.ui.flash("Save cancelled"),
         }
     }
 
     fn open_dialog(&mut self, purpose: Purpose, ctx: &egui::Context) {
         if self.dialogs.is_open() {
             self.ui.flash("A file dialog is already open");
-        } else if !self.dialogs.open(purpose, SUBTITLE_EXTENSIONS, ctx) {
+        } else if !self.dialogs.open(purpose, SUBTITLE_EXTENSIONS, None, ctx) {
             self.ui.error("Could not open the file dialog", "");
         }
     }
@@ -362,6 +411,7 @@ impl PlayerApp {
     fn tick(&mut self, ctx: &egui::Context) {
         self.refresh();
         self.pump_scrub(ctx);
+        self.poll_capture(ctx);
         if let Some(picked) = self.dialogs.poll() {
             self.dialog_finished(picked);
         }
@@ -784,7 +834,7 @@ impl PlayerApp {
                     self.ui.flash("Picture reset");
                 }
             }
-            Command::Screenshot => self.screenshot(),
+            Command::Screenshot => self.screenshot(ctx),
             Command::SortPlaylist(order) => {
                 self.playlist.sort(order, &mut self.rng);
                 self.ui.flash("Playlist sorted");
@@ -843,38 +893,80 @@ impl PlayerApp {
         }
     }
 
-    /// Capture ▸ Save Image: `~/Pictures/crab-player/<title> <time>.png`.
-    fn screenshot(&mut self) {
+    /// Capture ▸ Save Image: capture the current frame to a temporary file
+    /// and let the user choose where to keep it with the save dialog.
+    fn screenshot(&mut self, ctx: &egui::Context) {
         if self.snapshot.video_size.is_none() {
             self.ui.flash("Nothing to capture");
             return;
         }
-        // The XDG pictures directory, or ~/Pictures where none is
-        // configured (no `user-dirs.dirs`).
-        let folder = directories::UserDirs::new()
-            .map(|dirs| {
-                dirs.picture_dir()
-                    .map_or_else(|| dirs.home_dir().join("Pictures"), Path::to_path_buf)
-            })
-            .map(|dir| dir.join(APP_SLUG));
-        let Some(folder) = folder else {
-            self.ui.flash("No folder to save images in");
+        if self.dialogs.is_open() {
+            self.ui.flash("A file dialog is already open");
             return;
-        };
-        if let Err(err) = std::fs::create_dir_all(&folder) {
-            tracing::warn!(%err, folder = %folder.display(), "cannot create the image folder");
-            self.ui.flash("Could not create the image folder");
+        }
+        if self.pending_capture.is_some() {
+            self.ui.flash("Still capturing the image");
+            return;
+        }
+        // The frame is written now, not when the dialog is confirmed, so the
+        // saved image is the one that was on screen when Save Image was
+        // chosen. The sandbox's private temp directory always accepts it;
+        // the portal save dialog returns a writable path for the real file.
+        // mpv runs the screenshot command asynchronously, so the dialog is
+        // deferred until the file is complete (see `poll_capture`).
+        let temp =
+            std::env::temp_dir().join(format!("crab-player-frame-{}.png", std::process::id()));
+        let _ = std::fs::remove_file(&temp);
+        if let Err(err) = self.player.screenshot(&temp) {
+            tracing::warn!(%err, "screenshot failed");
+            self.ui.flash("Could not capture the image");
             return;
         }
         let title = self.snapshot.title.as_deref().unwrap_or("frame");
-        let path = folder.join(screenshot_name(title, self.snapshot.position));
-        match self.player.screenshot(&path) {
-            Ok(()) => self.ui.flash(format!("Saved {}", display_name(&path))),
-            Err(err) => {
-                tracing::warn!(%err, "screenshot failed");
-                self.ui.flash("Could not save the image");
+        self.pending_capture = Some(PendingCapture {
+            temp,
+            name: screenshot_name(title, self.snapshot.position),
+            // Generous for a 4K PNG with subtitles; only reached when the
+            // capture never completes.
+            deadline: Instant::now() + Duration::from_secs(3),
+        });
+        ctx.request_repaint_after(Duration::from_millis(30));
+    }
+
+    /// Open the save dialog once the requested screenshot has been written.
+    /// A failed capture (for example a frame the GPU could not read back)
+    /// leaves no complete PNG, and then no dialog is shown at all.
+    fn poll_capture(&mut self, ctx: &egui::Context) {
+        let Some(capture) = &self.pending_capture else {
+            return;
+        };
+        if !capture_complete(&capture.temp) {
+            if Instant::now() < capture.deadline {
+                ctx.request_repaint_after(Duration::from_millis(30));
+                return;
             }
+            let Some(capture) = self.pending_capture.take() else {
+                return;
+            };
+            tracing::warn!(path = %capture.temp.display(), "screenshot was not written");
+            let _ = std::fs::remove_file(&capture.temp);
+            self.ui.flash("Could not capture the image");
+            return;
         }
+        let Some(capture) = self.pending_capture.take() else {
+            return;
+        };
+        if !self.dialogs.open(
+            Purpose::SaveImage,
+            SUBTITLE_EXTENSIONS,
+            Some(&capture.name),
+            ctx,
+        ) {
+            let _ = std::fs::remove_file(&capture.temp);
+            self.ui.error("Could not open the save dialog", "");
+            return;
+        }
+        self.pending_screenshot = Some(capture.temp);
     }
 
     /// View ▸ Zoom: size the window so the picture shows at `percent` of its
@@ -1950,6 +2042,30 @@ pub fn aspect_label(ratio: Option<f64>) -> String {
     }
 }
 
+/// Whether the PNG mpv was asked to write is complete. The screenshot
+/// command runs asynchronously, so the file's PNG trailer is used as the
+/// completion signal: a failed encode leaves no trailer.
+fn capture_complete(path: &Path) -> bool {
+    const PNG_TRAILER: [u8; 8] = *b"IEND\xaeB`\x82";
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return false;
+    };
+    let Ok(len) = file.metadata().map(|meta| meta.len()) else {
+        return false;
+    };
+    if len < PNG_TRAILER.len() as u64 {
+        return false;
+    }
+    if file
+        .seek(SeekFrom::End(-(PNG_TRAILER.len() as i64)))
+        .is_err()
+    {
+        return false;
+    }
+    let mut trailer = [0u8; PNG_TRAILER.len()];
+    file.read_exact(&mut trailer).is_ok() && trailer == PNG_TRAILER
+}
+
 /// `Movie Title 0-12-34.png`: readable, sortable, and safe on any file
 /// system (no `/`, `:` or control characters).
 fn screenshot_name(title: &str, position: Duration) -> String {
@@ -2027,15 +2143,15 @@ mod tests {
     fn app_id_matches_the_packaging() {
         // The taskbar icon is found through the desktop file named after the
         // app id; the AppStream and Flatpak ids must be the same string.
-        let desktop = include_str!("../packaging/io.github.mahziyarng98.CrabPlayer.desktop");
+        let desktop = include_str!("../packaging/io.github.mahziyarng98.crab-player.desktop");
         assert!(desktop.contains(&format!("\nIcon={APP_ID}\n")));
         assert!(desktop.contains(&format!("\nStartupWMClass={APP_ID}\n")));
-        let metainfo = include_str!("../packaging/io.github.mahziyarng98.CrabPlayer.metainfo.xml");
+        let metainfo = include_str!("../packaging/io.github.mahziyarng98.crab-player.metainfo.xml");
         assert!(metainfo.contains(&format!("<id>{APP_ID}</id>")));
         assert!(metainfo.contains(&format!(
             "<launchable type=\"desktop-id\">{APP_ID}.desktop</launchable>"
         )));
-        let flatpak = include_str!("../packaging/flatpak/io.github.mahziyarng98.CrabPlayer.yml");
+        let flatpak = include_str!("../packaging/flatpak/io.github.mahziyarng98.crab-player.yml");
         assert!(flatpak.contains(&format!("\napp-id: {APP_ID}\n")));
     }
 
@@ -2141,6 +2257,19 @@ mod tests {
             "frame 0-00-00.000.png"
         );
         assert!(screenshot_name(&"x".repeat(300), Duration::ZERO).len() < 100);
+    }
+
+    #[test]
+    fn capture_is_complete_only_with_the_png_trailer() {
+        let dir = std::env::temp_dir().join(format!("crab-capture-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("frame.png");
+        std::fs::write(&path, b"\x89PNG\r\n\x1a\nnot written yet").unwrap();
+        assert!(!capture_complete(&path));
+        std::fs::write(&path, b"\x89PNG\r\n\x1a\n\x00\x00\x00\x00IEND\xaeB`\x82").unwrap();
+        assert!(capture_complete(&path));
+        assert!(!capture_complete(&dir.join("missing.png")));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -15,7 +15,6 @@
 *.pkg.tar.*
 packaging/flatpak/build-dir
 packaging/flatpak/.flatpak-builder
-packaging/flatpak/cargo-sources.json
 /debian/
 
 # Third-party binaries and loose images must never be committed.

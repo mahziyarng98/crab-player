@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AppStream metadata for software centres (GNOME Software, KDE Discover,
-     Flathub). Installed as /usr/share/metainfo/<id>.metainfo.xml. The id is
-     the application id used everywhere else; see docs/packaging.md. -->
+<!-- Copyright 2026 Mahziyar. AppStream metadata for software centres
+     (GNOME Software, KDE Discover, Flathub). Installed as
+     /usr/share/metainfo/<id>.metainfo.xml. The id is the application id
+     used everywhere else; see docs/packaging.md. -->
 <component type="desktop-application">
-  <id>io.github.mahziyarng98.CrabPlayer</id>
+  <id>io.github.mahziyarng98.crab-player</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
@@ -33,7 +34,7 @@
     </ul>
   </description>
 
-  <launchable type="desktop-id">io.github.mahziyarng98.CrabPlayer.desktop</launchable>
+  <launchable type="desktop-id">io.github.mahziyarng98.crab-player.desktop</launchable>
   <provides>
     <binary>crab-player</binary>
   </provides>
@@ -45,11 +46,15 @@
   <screenshots>
     <screenshot type="default">
       <caption>Playing a video with the playlist open</caption>
-      <image>https://raw.githubusercontent.com/mahziyarng98/crab-player/main/docs/screenshots/playing.png</image>
+      <image>https://raw.githubusercontent.com/mahziyarng98/crab-player/v0.1.1/docs/screenshots/playing.png</image>
     </screenshot>
     <screenshot>
-      <caption>Full screen with the controls shown</caption>
-      <image>https://raw.githubusercontent.com/mahziyarng98/crab-player/main/docs/screenshots/fullscreen.png</image>
+      <caption>The main menu</caption>
+      <image>https://raw.githubusercontent.com/mahziyarng98/crab-player/v0.1.1/docs/screenshots/menu.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The welcome screen</caption>
+      <image>https://raw.githubusercontent.com/mahziyarng98/crab-player/v0.1.1/docs/screenshots/welcome.png</image>
     </screenshot>
   </screenshots>
 
@@ -66,6 +71,11 @@
     <keyword>movie</keyword>
   </keywords>
 
+  <branding>
+    <color type="primary" scheme_preference="light">#7d1bfa</color>
+    <color type="primary" scheme_preference="dark">#a855f7</color>
+  </branding>
+
   <requires>
     <display_length compare="ge">640</display_length>
   </requires>
@@ -77,6 +87,16 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.1.1" date="2026-11-12">
+      <description>
+        <p>Packaging and sandbox fixes for the first Flathub submission.</p>
+        <ul>
+          <li>New reverse-DNS application id that matches the repository URL</li>
+          <li>Save Image uses the desktop save dialog instead of a fixed folder</li>
+          <li>Narrower Flatpak sandbox: read-only Videos folder instead of several home folders</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-11-11">
       <description>
         <p>First release.</p>

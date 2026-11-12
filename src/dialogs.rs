@@ -31,6 +31,8 @@ pub enum Purpose {
     AddFiles,
     /// Subtitles ▸ Load…: attach to the playing media.
     LoadSubtitle,
+    /// Capture ▸ Save Image: write the captured frame to the chosen file.
+    SaveImage,
 }
 
 /// A finished dialog. `paths` is empty when the user cancelled.
@@ -66,6 +68,7 @@ impl Dialogs {
         &mut self,
         purpose: Purpose,
         subtitle_extensions: &[&str],
+        save_name: Option<&str>,
         repaint: &egui::Context,
     ) -> bool {
         if self.is_open() {
@@ -85,6 +88,15 @@ impl Dialogs {
                 .set_title("Load Subtitle")
                 .add_filter("Subtitles", subtitle_extensions)
                 .add_filter("All files", &["*"]),
+            Purpose::SaveImage => {
+                let mut dialog = rfd::AsyncFileDialog::new()
+                    .set_title("Save Image")
+                    .add_filter("PNG image", &["png"]);
+                if let Some(name) = save_name {
+                    dialog = dialog.set_file_name(name);
+                }
+                dialog
+            }
         };
 
         let (sender, repaint) = (self.sender.clone(), repaint.clone());
@@ -100,6 +112,7 @@ impl Dialogs {
                     match purpose {
                         Purpose::OpenFile | Purpose::LoadSubtitle => one(dialog.pick_file().await),
                         Purpose::OpenFolder => one(dialog.pick_folder().await),
+                        Purpose::SaveImage => one(dialog.save_file().await),
                         Purpose::AddFiles => dialog
                             .pick_files()
                             .await

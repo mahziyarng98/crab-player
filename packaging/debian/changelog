@@ -1,3 +1,12 @@
+crab-player (0.1.1-1) unstable; urgency=medium
+
+  * Flathub preparation: the application id is now
+    io.github.mahziyarng98.crab-player, matching the repository URL.
+  * Save Image uses the desktop save dialog instead of writing to a fixed
+    folder, so the Flatpak needs no pictures-folder permission.
+
+ -- Mahziyar <289230375+mahziyarng98@users.noreply.github.com>  Thu, 12 Nov 2026 12:00:00 +0000
+
 crab-player (0.1.0-1) unstable; urgency=medium
 
   * First release: libmpv playback with hardware decoding, track selection,
